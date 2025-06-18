@@ -17,7 +17,10 @@ function loadConfig() {
     bulletDamage: 1,
     playerHp: 10,
     regenOnKill: 10,
-    grappleCooldown: 5
+    grappleCooldown: 5,
+    abilityCooldown: 5,
+    abilityDamage: 6,
+    abilityRange: 4
   };
   try {
     const data = fs.readFileSync(file, 'utf8');
@@ -44,10 +47,36 @@ const BULLET_DAMAGE = config.bulletDamage;
 const PLAYER_HP = config.playerHp;
 const REGEN_ON_KILL = config.regenOnKill;
 const GRAPPLE_COOLDOWN = config.grappleCooldown * 1000;
+const ABILITY_COOLDOWN = (config.abilityCooldown || 5) * 1000;
+const ABILITY_DAMAGE = config.abilityDamage || 6;
+const ABILITY_RANGE = config.abilityRange || 4;
+const CONE_ANGLE = Math.PI / 3; // 60 degree cone
 const players = {};
 const bullets = [];
+const cones = [];
 let nextPlayerId = 1;
 const map = [];
+
+function damagePlayer(target, amount, attackerId) {
+  target.hp -= amount;
+  if (target.hp <= 0) {
+    const killer = players[attackerId];
+    if (killer) {
+      killer.hp = Math.min(killer.hp + REGEN_ON_KILL, PLAYER_HP);
+      killer.score++;
+      killer.streak = (killer.streak || 0) + 1;
+    }
+    target.hp = PLAYER_HP;
+    target.streak = 0;
+    let sx, sy;
+    do {
+      sx = Math.floor(Math.random() * MAP_WIDTH);
+      sy = Math.floor(Math.random() * MAP_HEIGHT);
+    } while (map[sy][sx] !== TILE_EMPTY);
+    target.x = sx + 0.5;
+    target.y = sy + 0.5;
+  }
+}
 function generateMap() {
   for (let y = 0; y < MAP_HEIGHT; y++) {
     map[y] = [];
@@ -105,6 +134,7 @@ function addPlayer(name = 'Player') {
     streak: 0,
     lastShoot: 0,
     lastGrapple: 0,
+    lastAbility: 0,
     grapple: null
   };
   return players[id];
@@ -124,6 +154,44 @@ function addBullet(ownerId, dir) {
   else if (dir==='left') vel.x=-speed;
   else if (dir==='right') vel.x=speed;
   bullets.push({x:owner.x, y:owner.y, vx:vel.x, vy:vel.y, owner:ownerId});
+}
+
+function useAbility(ownerId) {
+  const owner = players[ownerId];
+  const now = Date.now();
+  if (now - owner.lastAbility < ABILITY_COOLDOWN) return;
+  owner.lastAbility = now;
+
+  let target = null;
+  let best = Infinity;
+  for (const id in players) {
+    if (id === ownerId) continue;
+    const p = players[id];
+    const dx = p.x - owner.x;
+    const dy = p.y - owner.y;
+    const dist2 = dx*dx + dy*dy;
+    if (dist2 < best) { best = dist2; target = p; }
+  }
+  if (!target) return;
+
+  const angle = Math.atan2(target.y - owner.y, target.x - owner.x);
+  // keep the cone visible for a full second (10 ticks)
+  cones.push({x: owner.x, y: owner.y, angle, life: 10});
+
+  for (const id in players) {
+    if (id === ownerId) continue;
+    const p = players[id];
+    const dx = p.x - owner.x;
+    const dy = p.y - owner.y;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    if (dist > ABILITY_RANGE) continue;
+    const ang = Math.atan2(dy, dx);
+    let diff = Math.abs(ang - angle);
+    if (diff > Math.PI) diff = Math.abs(diff - 2*Math.PI);
+    if (diff <= CONE_ANGLE/2) {
+      damagePlayer(p, ABILITY_DAMAGE, ownerId);
+    }
+  }
 }
 function update() {
   // update bullets with sub-steps to avoid skipping over players/walls
@@ -165,6 +233,11 @@ function update() {
       if (removed) break;
     }
     if (removed) bullets.splice(i, 1);
+  }
+
+  for (let i = cones.length - 1; i >= 0; i--) {
+    cones[i].life -= 1;
+    if (cones[i].life <= 0) cones.splice(i, 1);
   }
 
   // update grappling players
@@ -213,9 +286,11 @@ function handleAction(id, action) {
         break;
       }
     }
+  } else if (action.type==='ability') {
+    useAbility(id);
   }
 }
 function gameState(){
-  return {players, bullets, map};
+  return {players, bullets, cones, map};
 }
-module.exports={generateMap,addPlayer,removePlayer,handleAction,update,gameState,map,players,bullets,config};
+module.exports={generateMap,addPlayer,removePlayer,handleAction,update,gameState,map,players,bullets,cones,config};
