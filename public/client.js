@@ -100,10 +100,20 @@ function draw() {
   });
   animations = animations.filter(a=>a.t<10);
 
-  if(me && keys[' ']){
+  if(me && (keys['ArrowUp']||keys['ArrowDown']||keys['ArrowLeft']||keys['ArrowRight'])){
     drawGrapplePreview({x:mx,y:my}, camX, camY);
   }
   drawLeaderboard();
+/// help
+  if(me){
+    const cd = config.grappleCooldown*1000 - (Date.now() - me.lastGrapple);
+    ctx.fillStyle='#fff';
+    ctx.font='16px sans-serif';
+    ctx.textBaseline='top';
+    ctx.textAlign='left';
+    if(cd<=0) ctx.fillText('Grapple ready',10,10);
+    else ctx.fillText('Grapple: '+Math.ceil(cd/1000)+'s',10,10);
+  }
   requestAnimationFrame(draw);
 }
 
@@ -114,6 +124,7 @@ function send(action){
 function setupInput(){
   window.addEventListener('keydown',e=>{
     if(e.ctrlKey && ['-','_','+','=','0'].includes(e.key)) e.preventDefault();
+    if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) e.preventDefault();
   });
   window.addEventListener('wheel',e=>{ if(e.ctrlKey) e.preventDefault(); },{passive:false});
   document.addEventListener('keydown',e=>{keys[e.key]=true;});
@@ -130,12 +141,10 @@ function setupInput(){
     if(keys['k']){send({type:'shoot',dir:'down'}); sndShoot.play();}
     if(keys['j']){send({type:'shoot',dir:'left'}); sndShoot.play();}
     if(keys['l']){send({type:'shoot',dir:'right'}); sndShoot.play();}
-    if(keys[' ']){
-      if(keys['i'])send({type:'grapple',dir:'up'});
-      if(keys['k'])send({type:'grapple',dir:'down'});
-      if(keys['j'])send({type:'grapple',dir:'left'});
-      if(keys['l'])send({type:'grapple',dir:'right'});
-    }
+    if(keys['ArrowUp'])send({type:'grapple',dir:'up'});
+    if(keys['ArrowDown'])send({type:'grapple',dir:'down'});
+    if(keys['ArrowLeft'])send({type:'grapple',dir:'left'});
+    if(keys['ArrowRight'])send({type:'grapple',dir:'right'});
   },100);
 }
 function drawGrapplePreview(me, camX, camY){

@@ -15,7 +15,7 @@ Open `http://localhost:3000` in your browser. You can also connect from other ma
 
 - **WASD** – move
 - **IJKL** – shoot in the four directions
-- **Space + IJKL** – grapple hook
+- **Arrow keys** – grapple hook
 
 Each player has a limited amount of HP (10 by default). Taking damage reduces HP by 1. Killing another player heals you, but HP never exceeds the maximum. Dying respawns you at a random location. The map scrolls with your character so only a small area is visible at once.
 
@@ -59,7 +59,8 @@ Client logic in `public/client.js` uses these endpoints to join the game, listen
 - Grapple hook that pulls the player next to the first wall in a direction
 - Basic sound effects and colored rectangles for graphics
 - Small death animation and visible health bars
-- Holding **space** shows the grappling hook range preview
+- Holding an **arrow key** shows the grappling hook range preview
+- Grapple cooldown displayed on screen
 - Large scrolling map with camera centered on the player
 - Smooth movement between grid cells
 - Browser zoom keys are disabled so everyone sees the same area
