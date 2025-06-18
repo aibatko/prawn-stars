@@ -70,7 +70,6 @@ function draw() {
   });
   animations = animations.filter(a=>a.t<10);
 
-  const me = players[playerId];
   if(me && keys[' ']){
     drawGrapplePreview(me, camX, camY);
   }
@@ -108,6 +107,20 @@ function setupInput(){
     }
   },100);
 }
+function drawGrapplePreview(me, camX, camY){
+  ctx.fillStyle='rgba(255,255,255,0.3)';
+  const dirs=[{x:0,y:-1},{x:0,y:1},{x:-1,y:0},{x:1,y:0}];
+  for(const d of dirs){
+    let cx=Math.floor(me.x), cy=Math.floor(me.y);
+    for(let i=0;i<5;i++){
+      cx+=d.x; cy+=d.y;
+      if(cx<0||cy<0||cx>=map[0].length||cy>=map.length) break;
+      ctx.fillRect((cx - camX)*tileSize+4, (cy - camY)*tileSize+4, tileSize-8, tileSize-8);
+      if(map[cy][cx]===1) break;
+    }
+  }
+}
+
 function drawGrapplePreview(me, camX, camY){
   ctx.fillStyle='rgba(255,255,255,0.3)';
   const dirs=[{x:0,y:-1},{x:0,y:1},{x:-1,y:0},{x:1,y:0}];
