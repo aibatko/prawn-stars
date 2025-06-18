@@ -9,7 +9,7 @@ cd server
 npm start
 ```
 
-Open `http://localhost:3000` in your browser. Connecting clients join the same arena immediately.
+Open `http://localhost:3000` in your browser. You can also connect from other machines using `http://<server-ip>:3000`. Connecting clients join the same arena immediately.
 
 ## Controls
 
