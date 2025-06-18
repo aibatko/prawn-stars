@@ -3,6 +3,7 @@ const ctx = canvas.getContext('2d');
 const board = document.getElementById('leaderboard');
 const bctx = board.getContext('2d');
 const tileSize = 16;
+const CONE_ANGLE = Math.PI / 3;
 function resize(){
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
@@ -15,6 +16,7 @@ let playerId = null;
 let map = [];
 let players = {};
 let bullets = [];
+let cones = [];
 let lastHp = 10;
 const keys = {};
 const prevPlayers = {};
@@ -32,7 +34,10 @@ let config = {
   bulletDamage: 1,
   playerHp: 10,
   regenOnKill: 10,
-  grappleCooldown: 5
+  grappleCooldown: 5,
+  abilityCooldown: 5,
+  abilityDamage: 6,
+  abilityRange: 4
 };
 const sndShoot = new Audio('assets/shoot.wav');
 const sndKill = new Audio('assets/kill.wav');
@@ -89,6 +94,18 @@ function draw() {
   bullets.forEach(b=>{
     ctx.fillRect((b.x - camX)*tileSize-2,(b.y - camY)*tileSize-2,4,4);
   });
+  ctx.fillStyle='rgba(255,0,0,0.4)';
+  cones.forEach(c=>{
+    const startX=(c.x - camX)*tileSize;
+    const startY=(c.y - camY)*tileSize;
+    const range=(config.abilityRange||4)*tileSize;
+    ctx.beginPath();
+    ctx.moveTo(startX,startY);
+    ctx.lineTo(startX+Math.cos(c.angle-CONE_ANGLE/2)*range,startY+Math.sin(c.angle-CONE_ANGLE/2)*range);
+    ctx.lineTo(startX+Math.cos(c.angle+CONE_ANGLE/2)*range,startY+Math.sin(c.angle+CONE_ANGLE/2)*range);
+    ctx.closePath();
+    ctx.fill();
+  });
   // death animations
   animations.forEach(a=>{
     const alpha = 1 - a.t/10;
@@ -113,6 +130,9 @@ function draw() {
     ctx.textAlign='left';
     if(cd<=0) ctx.fillText('Grapple ready',10,10);
     else ctx.fillText('Grapple: '+Math.ceil(cd/1000)+'s',10,10);
+    const ad = config.abilityCooldown*1000 - (Date.now() - me.lastAbility);
+    if(ad<=0) ctx.fillText('Ability ready',10,28);
+    else ctx.fillText('Ability: '+Math.ceil(ad/1000)+'s',10,28);
   }
   requestAnimationFrame(draw);
 }
@@ -145,6 +165,7 @@ function setupInput(){
     if(keys['ArrowDown'])send({type:'grapple',dir:'down'});
     if(keys['ArrowLeft'])send({type:'grapple',dir:'left'});
     if(keys['ArrowRight'])send({type:'grapple',dir:'right'});
+    if(keys['Enter'])send({type:'ability'});
   },100);
 }
 function drawGrapplePreview(me, camX, camY){
@@ -193,7 +214,7 @@ function start(){
         if(players[id]) smoothPrev[id]={x:players[id].x,y:players[id].y};
         else smoothPrev[id]={x:state.players[id].x,y:state.players[id].y};
       }
-      players=state.players;bullets=state.bullets;lastUpdate=Date.now();
+      players=state.players;bullets=state.bullets;cones=state.cones||[];lastUpdate=Date.now();
       for(const id in state.players){
         const p=state.players[id];
         const prev=prevPlayers[id];
