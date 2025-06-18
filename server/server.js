@@ -65,7 +65,8 @@ function serve(req, res) {
   } else if (req.method==='GET' && parsed.pathname==='/style.css') {
     sendFile(res, path.join(__dirname,'..','public','style.css'),'text/css');
   } else if (req.method==='GET' && parsed.pathname.startsWith('/assets/')) {
-    sendFile(res, path.join(__dirname,'..','public',parsed.pathname),'audio/wav');
+    const asset = parsed.pathname.replace(/^\/+/, '');
+    sendFile(res, path.join(__dirname, '..', 'public', asset), 'audio/wav');
   } else if (req.method==='POST' && parsed.pathname==='/join') {
     handleJoin(req, res);
   } else if (req.method==='GET' && parsed.pathname==='/stream') {
