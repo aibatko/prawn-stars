@@ -17,7 +17,7 @@ Open `http://localhost:3000` in your browser. Connecting clients join the same a
 - **IJKL** – shoot in the four directions
 - **Space + IJKL** – grapple hook
 
-Each player has 10 HP. Taking damage lowers HP by 1. Killing another player heals you to full. Dying respawns you at a random location. The map now scrolls with your character so only a small area is visible at once.
+Each player has a limited amount of HP (10 by default). Taking damage reduces HP by 1. Killing another player heals you, but HP never exceeds the maximum. Dying respawns you at a random location. The map scrolls with your character so only a small area is visible at once.
 
 Walls block bullets and can be grappled.
 
@@ -34,6 +34,7 @@ public/       - client side assets
 server/       - Node.js backend
   server.js   - HTTP server and event stream
   game.js     - game state and rules
+  config.yml  - gameplay parameters
   package.json
 ```
 
@@ -60,8 +61,8 @@ Client logic in `public/client.js` uses these endpoints to join the game, listen
 
 ### Modifying the game
 
-- **Changing map size or density** – edit `MAP_WIDTH`, `MAP_HEIGHT` and map generation in `server/game.js`.
-- **Player properties and rules** – handled in `addPlayer`, `update` and `handleAction` inside `server/game.js`.
+- **Changing map size or player stats** – tweak values in `server/config.yml`.
+- **Game logic implementation** – handled in `addPlayer`, `update` and `handleAction` inside `server/game.js`.
 - **Client rendering** – update canvas drawing code or add sprites in `public/client.js` and assets under `public/`.
 - **Camera behaviour** – the view follows the current player, computed in `draw()` inside `public/client.js`.
 - **Networking** – `server/server.js` streams the current state every 100ms. Adjust the interval or protocol here.
