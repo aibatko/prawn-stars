@@ -126,35 +126,45 @@ function addBullet(ownerId, dir) {
   bullets.push({x:owner.x, y:owner.y, vx:vel.x, vy:vel.y, owner:ownerId});
 }
 function update() {
-  // update bullets
-  for (let i=bullets.length-1;i>=0;i--) {
+  // update bullets with sub-steps to avoid skipping over players/walls
+  for (let i = bullets.length - 1; i >= 0; i--) {
     const b = bullets[i];
-    b.x += b.vx;
-    b.y += b.vy;
-    if (b.x<0||b.y<0||b.x>=MAP_WIDTH||b.y>=MAP_HEIGHT) { bullets.splice(i,1); continue; }
-    if (map[Math.floor(b.y)][Math.floor(b.x)]===TILE_WALL){ bullets.splice(i,1); continue; }
-    for (const id in players) {
-      const p=players[id];
-      if (Math.floor(p.x)===Math.floor(b.x)&&Math.floor(p.y)===Math.floor(b.y)) {
-        if (id!==b.owner){
-          p.hp -= BULLET_DAMAGE;
-          if (p.hp<=0){
-            const killer=players[b.owner];
-            if(killer){
-              killer.hp = Math.min(killer.hp + REGEN_ON_KILL, PLAYER_HP);
-              killer.score++;
-              killer.streak = (killer.streak || 0) + 1;
+    const steps = Math.ceil(Math.max(Math.abs(b.vx), Math.abs(b.vy))); // max 1 tile per step
+    let removed = false;
+
+    for (let s = 0; s < steps; s++) {
+      b.x += b.vx / steps;
+      b.y += b.vy / steps;
+
+      if (b.x < 0 || b.y < 0 || b.x >= MAP_WIDTH || b.y >= MAP_HEIGHT) { removed = true; break; }
+      if (map[Math.floor(b.y)][Math.floor(b.x)] === TILE_WALL) { removed = true; break; }
+
+      for (const id in players) {
+        const p = players[id];
+        if (Math.floor(p.x) === Math.floor(b.x) && Math.floor(p.y) === Math.floor(b.y)) {
+          if (id !== b.owner) {
+            p.hp -= BULLET_DAMAGE;
+            if (p.hp <= 0) {
+              const killer = players[b.owner];
+              if (killer) {
+                killer.hp = Math.min(killer.hp + REGEN_ON_KILL, PLAYER_HP);
+                killer.score++;
+                killer.streak = (killer.streak || 0) + 1;
+              }
+              p.hp = PLAYER_HP;
+              p.streak = 0;
+              let sx, sy;
+              do { sx = Math.floor(Math.random() * MAP_WIDTH); sy = Math.floor(Math.random() * MAP_HEIGHT); } while (map[sy][sx] !== TILE_EMPTY);
+              p.x = sx + 0.5; p.y = sy + 0.5;
             }
-            p.hp = PLAYER_HP;
-            p.streak = 0;
-            let sx,sy;
-            do{ sx=Math.floor(Math.random()*MAP_WIDTH); sy=Math.floor(Math.random()*MAP_HEIGHT);}while(map[sy][sx]!==TILE_EMPTY);
-            p.x=sx+0.5; p.y=sy+0.5;
+            removed = true;
           }
-          bullets.splice(i,1); break;
+          break;
         }
       }
+      if (removed) break;
     }
+    if (removed) bullets.splice(i, 1);
   }
 
   // update grappling players
