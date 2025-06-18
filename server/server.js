@@ -21,7 +21,7 @@ function sendFile(res, filePath, contentType) {
 function handleJoin(req, res) {
   const player = game.addPlayer();
   res.writeHead(200, {'Content-Type': 'application/json'});
-  res.end(JSON.stringify({id: player.id, map: game.map}));
+  res.end(JSON.stringify({id: player.id, map: game.map, config: game.config}));
 }
 
 function handleStream(req, res, id) {
