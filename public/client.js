@@ -108,7 +108,6 @@ function setupInput(){
     }
   },100);
 }
-
 function drawGrapplePreview(me, camX, camY){
   ctx.fillStyle='rgba(255,255,255,0.3)';
   const dirs=[{x:0,y:-1},{x:0,y:1},{x:-1,y:0},{x:1,y:0}];
