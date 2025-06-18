@@ -81,7 +81,7 @@ function serve(req, res) {
 game.generateMap();
 setInterval(()=>{
   game.update();
-  const state=JSON.stringify({type:'state', players: game.players, bullets: game.bullets});
+  const state=JSON.stringify({type:'state', players: game.players, bullets: game.bullets, cones: game.cones});
   for (const [id, res] of clients.entries()) {
     res.write(`data: ${state}\n\n`);
   }
