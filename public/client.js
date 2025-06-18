@@ -112,14 +112,14 @@ function draw() {
   ctx.lineWidth = 2;
   grappleAnims.forEach(g=>{
     const p = players[g.id];
-    if(!p){ g.t=100; return; }
+    if(!p){ g.done=true; return; }
+    if(!p.grapple){ g.done=true; return; }
     ctx.beginPath();
     ctx.moveTo((p.x - camX)*tileSize,(p.y - camY)*tileSize);
-    ctx.lineTo((g.tx - camX)*tileSize,(g.ty - camY)*tileSize);
+    ctx.lineTo((p.grapple.x - camX)*tileSize,(p.grapple.y - camY)*tileSize);
     ctx.stroke();
-    g.t++;
   });
-  grappleAnims = grappleAnims.filter(g=>g.t<5);
+  grappleAnims = grappleAnims.filter(g=>!g.done);
   // death animations
   animations.forEach(a=>{
     const alpha = 1 - a.t/10;
@@ -233,7 +233,7 @@ function start(){
         const p=state.players[id];
         const prev=prevPlayers[id];
         if(prev && !prev.grapple && p.grapple){
-          grappleAnims.push({id,tx:p.grapple.x,ty:p.grapple.y,t:0});
+          grappleAnims.push({id});
         }
         if(prev && p.hp===config.playerHp && prev.hp<config.playerHp && (p.x!==prev.x || p.y!==prev.y)){
           animations.push({x:prev.x,y:prev.y,t:0});
