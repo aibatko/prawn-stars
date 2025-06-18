@@ -21,6 +21,11 @@ Each player has a limited amount of HP (10 by default). Taking damage reduces HP
 
 Walls block bullets and can be grappled.
 
+At game start you will be prompted for your player name. A small leaderboard
+canvas sits in the top right corner showing all connected players ordered by
+their kill count. The red number next to each entry is the current kill streak
+(reset to zero when that player dies).
+
 ## Developer Guide
 
 ### Project layout

@@ -19,9 +19,18 @@ function sendFile(res, filePath, contentType) {
 }
 
 function handleJoin(req, res) {
-  const player = game.addPlayer();
-  res.writeHead(200, {'Content-Type': 'application/json'});
-  res.end(JSON.stringify({id: player.id, map: game.map, config: game.config}));
+  let body='';
+  req.on('data', chunk => body += chunk);
+  req.on('end', () => {
+    let name = 'Player';
+    try {
+      const data = JSON.parse(body);
+      if (data.name) name = String(data.name).slice(0, 20);
+    } catch (_) {}
+    const player = game.addPlayer(name);
+    res.writeHead(200, {'Content-Type': 'application/json'});
+    res.end(JSON.stringify({id: player.id, map: game.map, config: game.config}));
+  });
 }
 
 function handleStream(req, res, id) {
