@@ -1,6 +1,12 @@
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 const tileSize = 16;
+function resize(){
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resize);
+resize();
 let playerId = null;
 let map = [];
 let players = {};
@@ -8,6 +14,8 @@ let bullets = [];
 let lastHp = 10;
 const keys = {};
 const prevPlayers = {};
+let smoothPrev = {};
+let lastUpdate = Date.now();
 let animations = [];
 const sndShoot = new Audio('assets/shoot.wav');
 const sndKill = new Audio('assets/kill.wav');
@@ -18,11 +26,15 @@ function draw() {
 
   const tilesX = canvas.width/tileSize;
   const tilesY = canvas.height/tileSize;
+  const t = Math.min(1,(Date.now()-lastUpdate)/100);
   const me = players[playerId];
-  let camX=0, camY=0;
+  let camX=0, camY=0, mx=0, my=0;
   if(me){
-    camX = me.x - tilesX/2;
-    camY = me.y - tilesY/2;
+    const prev = smoothPrev[playerId] || me;
+    mx = prev.x + (me.x - prev.x)*t;
+    my = prev.y + (me.y - prev.y)*t;
+    camX = mx - tilesX/2;
+    camY = my - tilesY/2;
     const maxX = map[0].length - tilesX;
     const maxY = map.length - tilesY;
     camX = Math.max(0, Math.min(camX, maxX));
@@ -43,8 +55,9 @@ function draw() {
 
   for(const id in players){
     const p=players[id];
-    const px=(p.x - camX)*tileSize;
-    const py=(p.y - camY)*tileSize;
+    const prev=smoothPrev[id]||p;
+    const px=(prev.x + (p.x-prev.x)*t - camX)*tileSize;
+    const py=(prev.y + (p.y-prev.y)*t - camY)*tileSize;
     ctx.fillStyle=id===playerId?'#0f0':'#f00';
     ctx.beginPath();
     ctx.arc(px, py, tileSize/2-2,0,Math.PI*2);
@@ -71,7 +84,7 @@ function draw() {
   animations = animations.filter(a=>a.t<10);
 
   if(me && keys[' ']){
-    drawGrapplePreview(me, camX, camY);
+    drawGrapplePreview({x:mx,y:my}, camX, camY);
   }
   requestAnimationFrame(draw);
 }
@@ -121,27 +134,18 @@ function drawGrapplePreview(me, camX, camY){
   }
 }
 
-function drawGrapplePreview(me, camX, camY){
-  ctx.fillStyle='rgba(255,255,255,0.3)';
-  const dirs=[{x:0,y:-1},{x:0,y:1},{x:-1,y:0},{x:1,y:0}];
-  for(const d of dirs){
-    let cx=Math.floor(me.x), cy=Math.floor(me.y);
-    for(let i=0;i<5;i++){
-      cx+=d.x; cy+=d.y;
-      if(cx<0||cy<0||cx>=map[0].length||cy>=map.length) break;
-      ctx.fillRect((cx - camX)*tileSize+4, (cy - camY)*tileSize+4, tileSize-8, tileSize-8);
-      if(map[cy][cx]===1) break;
-    }
-  }
-}
-
 function start(){
   fetch('/join',{method:'POST'}).then(r=>r.json()).then(data=>{
     playerId=data.id; map=data.map;
     const es=new EventSource('/stream?id='+playerId);
     es.onmessage=ev=>{
       const state=JSON.parse(ev.data);
-      players=state.players;bullets=state.bullets;
+      smoothPrev={};
+      for(const id in state.players){
+        if(players[id]) smoothPrev[id]={x:players[id].x,y:players[id].y};
+        else smoothPrev[id]={x:state.players[id].x,y:state.players[id].y};
+      }
+      players=state.players;bullets=state.bullets;lastUpdate=Date.now();
       for(const id in state.players){
         const p=state.players[id];
         const prev=prevPlayers[id];
