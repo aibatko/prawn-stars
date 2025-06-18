@@ -1,55 +1,29 @@
-const fs = require('fs');
-const path = require('path');
+const config = require('./config');
 
 const TILE_EMPTY = 0;
 const TILE_WALL = 1;
 
-function loadConfig() {
-  const file = path.join(__dirname, 'config.yml');
-  const cfg = {
-    playerSpeed: 0.2,
-    bulletSpeed: 0.5,
-    reloadTime: 0.3,
-    grappleSpeed: 1,
-    grappleRange: 5,
-    mapWidth: 100,
-    mapHeight: 50,
-    bulletDamage: 1,
-    playerHp: 10,
-    regenOnKill: 10,
-    grappleCooldown: 5,
-    abilityCooldown: 5,
-    abilityDamage: 6,
-    abilityRange: 4
-  };
-  try {
-    const data = fs.readFileSync(file, 'utf8');
-    data.split(/\r?\n/).forEach(line => {
-      const t = line.trim();
-      if (!t || t.startsWith('#')) return;
-      const [k, v] = t.split(/:\s*/);
-      cfg[k] = parseFloat(v);
-    });
-  } catch (_) {}
-  return cfg;
-}
 
-const config = loadConfig();
+const {
+  mapWidth: MAP_WIDTH,
+  mapHeight: MAP_HEIGHT,
+  playerSpeed: PLAYER_SPEED,
+  bulletSpeed: BULLET_SPEED,
+  reloadTime,
+  grappleSpeed: GRAPPLE_SPEED,
+  grappleRange: GRAPPLE_RANGE,
+  bulletDamage: BULLET_DAMAGE,
+  playerHp: PLAYER_HP,
+  regenOnKill: REGEN_ON_KILL,
+  grappleCooldown,
+  abilityCooldown,
+  abilityDamage: ABILITY_DAMAGE,
+  abilityRange: ABILITY_RANGE
+} = config;
 
-const MAP_WIDTH = config.mapWidth;
-const MAP_HEIGHT = config.mapHeight;
-const PLAYER_SPEED = config.playerSpeed;
-const BULLET_SPEED = config.bulletSpeed;
-const RELOAD_TIME = config.reloadTime * 1000;
-const GRAPPLE_SPEED = config.grappleSpeed;
-const GRAPPLE_RANGE = config.grappleRange;
-const BULLET_DAMAGE = config.bulletDamage;
-const PLAYER_HP = config.playerHp;
-const REGEN_ON_KILL = config.regenOnKill;
-const GRAPPLE_COOLDOWN = config.grappleCooldown * 1000;
-const ABILITY_COOLDOWN = (config.abilityCooldown || 5) * 1000;
-const ABILITY_DAMAGE = config.abilityDamage || 6;
-const ABILITY_RANGE = config.abilityRange || 4;
+const RELOAD_TIME = reloadTime * 1000;
+const GRAPPLE_COOLDOWN = grappleCooldown * 1000;
+const ABILITY_COOLDOWN = abilityCooldown * 1000;
 const CONE_ANGLE = Math.PI / 3; // 60 degree cone
 const players = {};
 const bullets = [];
