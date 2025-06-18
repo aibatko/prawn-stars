@@ -122,11 +122,16 @@ function addBullet(ownerId, dir) {
   if (now - owner.lastShoot < RELOAD_TIME) return;
   owner.lastShoot = now;
   const speed = BULLET_SPEED;
+  const diag = speed/Math.SQRT2;
   const vel = {x:0,y:0};
   if (dir==='up') vel.y=-speed;
   else if (dir==='down') vel.y=speed;
   else if (dir==='left') vel.x=-speed;
   else if (dir==='right') vel.x=speed;
+  else if (dir==='upleft'){ vel.x=-diag; vel.y=-diag; }
+  else if (dir==='upright'){ vel.x=diag; vel.y=-diag; }
+  else if (dir==='downleft'){ vel.x=-diag; vel.y=diag; }
+  else if (dir==='downright'){ vel.x=diag; vel.y=diag; }
   bullets.push({x:owner.x, y:owner.y, vx:vel.x, vy:vel.y, owner:ownerId});
 }
 
@@ -249,7 +254,14 @@ function handleAction(id, action) {
     if (now - p.lastGrapple < GRAPPLE_COOLDOWN || p.grapple) return;
     const dir = action.dir;
     let dx=0,dy=0;
-    if(dir==='up')dy=-1;else if(dir==='down')dy=1;else if(dir==='left')dx=-1;else if(dir==='right')dx=1;
+    if(dir==='up')dy=-1;
+    else if(dir==='down')dy=1;
+    else if(dir==='left')dx=-1;
+    else if(dir==='right')dx=1;
+    else if(dir==='upleft'){dx=-1;dy=-1;}
+    else if(dir==='upright'){dx=1;dy=-1;}
+    else if(dir==='downleft'){dx=-1;dy=1;}
+    else if(dir==='downright'){dx=1;dy=1;}
     let cx=Math.floor(p.x), cy=Math.floor(p.y);
     for(let i=0;i<GRAPPLE_RANGE;i++){
       cx+=dx; cy+=dy;
