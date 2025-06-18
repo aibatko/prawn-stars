@@ -1,9 +1,30 @@
+const fs = require('fs');
+const path = require('path');
+
 const MAP_WIDTH = 200;
 const MAP_HEIGHT = 200;
 const TILE_EMPTY = 0;
 const TILE_WALL = 1;
-const PLAYER_SPEED = 0.2;
-const BULLET_SPEED = 0.5;
+
+function loadConfig() {
+  const file = path.join(__dirname, 'config.yml');
+  const cfg = { playerSpeed: 0.2, bulletSpeed: 0.5, grappleRange: 5 };
+  try {
+    const data = fs.readFileSync(file, 'utf8');
+    data.split(/\r?\n/).forEach(line => {
+      const t = line.trim();
+      if (!t || t.startsWith('#')) return;
+      const [k, v] = t.split(/:\s*/);
+      cfg[k] = parseFloat(v);
+    });
+  } catch (_) {}
+  return cfg;
+}
+
+const config = loadConfig();
+const PLAYER_SPEED = config.playerSpeed;
+const BULLET_SPEED = config.bulletSpeed;
+const GRAPPLE_RANGE = config.grappleRange;
 const players = {};
 const bullets = [];
 let nextPlayerId = 1;
@@ -114,7 +135,7 @@ function handleAction(id, action) {
     let dx=0,dy=0;
     if(dir==='up')dy=-1;else if(dir==='down')dy=1;else if(dir==='left')dx=-1;else if(dir==='right')dx=1;
     let cx=Math.floor(p.x), cy=Math.floor(p.y);
-    for(let i=0;i<5;i++){
+    for(let i=0;i<GRAPPLE_RANGE;i++){
       cx+=dx; cy+=dy;
       if(cx<0||cy<0||cx>=MAP_WIDTH||cy>=MAP_HEIGHT)break;
       if(map[cy][cx]===TILE_WALL){
@@ -128,4 +149,4 @@ function handleAction(id, action) {
 function gameState(){
   return {players, bullets, map};
 }
-module.exports={generateMap,addPlayer,removePlayer,handleAction,update,gameState,map,players,bullets};
+module.exports={generateMap,addPlayer,removePlayer,handleAction,update,gameState,map,players,bullets,config};

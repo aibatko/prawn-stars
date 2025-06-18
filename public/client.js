@@ -17,6 +17,7 @@ const prevPlayers = {};
 let smoothPrev = {};
 let lastUpdate = Date.now();
 let animations = [];
+let config = {grappleRange:5};
 const sndShoot = new Audio('assets/shoot.wav');
 const sndKill = new Audio('assets/kill.wav');
 const sndDie = new Audio('assets/die.wav');
@@ -125,7 +126,7 @@ function drawGrapplePreview(me, camX, camY){
   const dirs=[{x:0,y:-1},{x:0,y:1},{x:-1,y:0},{x:1,y:0}];
   for(const d of dirs){
     let cx=Math.floor(me.x), cy=Math.floor(me.y);
-    for(let i=0;i<5;i++){
+    for(let i=0;i<(config.grappleRange||5);i++){
       cx+=d.x; cy+=d.y;
       if(cx<0||cy<0||cx>=map[0].length||cy>=map.length) break;
       ctx.fillRect((cx - camX)*tileSize+4, (cy - camY)*tileSize+4, tileSize-8, tileSize-8);
@@ -136,7 +137,7 @@ function drawGrapplePreview(me, camX, camY){
 
 function start(){
   fetch('/join',{method:'POST'}).then(r=>r.json()).then(data=>{
-    playerId=data.id; map=data.map;
+    playerId=data.id; map=data.map; config=data.config||config;
     const es=new EventSource('/stream?id='+playerId);
     es.onmessage=ev=>{
       const state=JSON.parse(ev.data);
