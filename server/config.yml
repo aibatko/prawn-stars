@@ -1,11 +1,11 @@
-playerSpeed: 0.2
-bulletSpeed: 0.5
+playerSpeed: 0.8
+bulletSpeed: 2.5
 reloadTime: 0.3
-grappleSpeed: 1
-grappleRange: 5
+grappleSpeed: 2
+grappleRange: 15
 mapWidth: 100
 mapHeight: 50
 bulletDamage: 1
 playerHp: 10
 regenOnKill: 10
-grappleCooldown: 5
+grappleCooldown: 3
