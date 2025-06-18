@@ -93,7 +93,9 @@ function draw() {
   }
   ctx.fillStyle='#ff0';
   bullets.forEach(b=>{
-    ctx.fillRect((b.x - camX)*tileSize-2,(b.y - camY)*tileSize-2,4,4);
+    const bx = (b.x - b.vx*(1 - t) - camX) * tileSize;
+    const by = (b.y - b.vy*(1 - t) - camY) * tileSize;
+    ctx.fillRect(bx-2, by-2, 4, 4);
   });
   ctx.fillStyle='rgba(255,0,0,0.4)';
   cones.forEach(c=>{
