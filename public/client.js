@@ -15,34 +15,56 @@ const sndDie = new Audio('assets/die.wav');
 
 function draw() {
   ctx.clearRect(0,0,canvas.width,canvas.height);
-  for (let y=0;y<map.length;y++){
-    for(let x=0;x<map[y].length;x++){
-      if(map[y][x]===1){
+
+  const tilesX = canvas.width/tileSize;
+  const tilesY = canvas.height/tileSize;
+  const me = players[playerId];
+  let camX=0, camY=0;
+  if(me){
+    camX = me.x - tilesX/2;
+    camY = me.y - tilesY/2;
+    const maxX = map[0].length - tilesX;
+    const maxY = map.length - tilesY;
+    camX = Math.max(0, Math.min(camX, maxX));
+    camY = Math.max(0, Math.min(camY, maxY));
+  }
+
+  const startX = Math.floor(camX);
+  const startY = Math.floor(camY);
+
+  for (let y=startY; y<startY+tilesY+1; y++){
+    for(let x=startX; x<startX+tilesX+1; x++){
+      if(map[y] && map[y][x]===1){
         ctx.fillStyle='#555';
-        ctx.fillRect(x*tileSize,y*tileSize,tileSize,tileSize);
+        ctx.fillRect((x-camX)*tileSize,(y-camY)*tileSize,tileSize,tileSize);
       }
     }
   }
+
   for(const id in players){
     const p=players[id];
+    const px=(p.x - camX)*tileSize;
+    const py=(p.y - camY)*tileSize;
     ctx.fillStyle=id===playerId?'#0f0':'#f00';
-    ctx.fillRect(p.x*tileSize,p.y*tileSize,tileSize,tileSize);
+    ctx.beginPath();
+    ctx.arc(px, py, tileSize/2-2,0,Math.PI*2);
+    ctx.fill();
     // health bar
     ctx.fillStyle='#000';
-    ctx.fillRect(p.x*tileSize, p.y*tileSize-4, tileSize, 3);
+    ctx.fillRect(px - tileSize/2, py - tileSize/2 - 4, tileSize, 3);
     ctx.fillStyle='#0f0';
-    ctx.fillRect(p.x*tileSize, p.y*tileSize-4, tileSize*(p.hp/10), 3);
+    ctx.fillRect(px - tileSize/2, py - tileSize/2 - 4, tileSize*(p.hp/10), 3);
   }
   ctx.fillStyle='#ff0';
   bullets.forEach(b=>{
-    ctx.fillRect(b.x*tileSize,b.y*tileSize,4,4);
+    ctx.fillRect((b.x - camX)*tileSize-2,(b.y - camY)*tileSize-2,4,4);
   });
   // death animations
   animations.forEach(a=>{
     const alpha = 1 - a.t/10;
     ctx.fillStyle = `rgba(255,255,255,${alpha})`;
     ctx.beginPath();
-    ctx.arc((a.x+0.5)*tileSize, (a.y+0.5)*tileSize, tileSize*(a.t/10+0.5), 0, Math.PI*2);
+    ctx.arc((a.x - camX)*tileSize, (a.y - camY)*tileSize, tileSize*(a.t/10+0.5), 0, Math.PI*2);
     ctx.fill();
     a.t++;
   });
@@ -50,7 +72,7 @@ function draw() {
 
   const me = players[playerId];
   if(me && keys[' ']){
-    drawGrapplePreview(me);
+    drawGrapplePreview(me, camX, camY);
   }
   requestAnimationFrame(draw);
 }
@@ -60,6 +82,10 @@ function send(action){
 }
 
 function setupInput(){
+  window.addEventListener('keydown',e=>{
+    if(e.ctrlKey && ['-','_','+','=','0'].includes(e.key)) e.preventDefault();
+  });
+  window.addEventListener('wheel',e=>{ if(e.ctrlKey) e.preventDefault(); },{passive:false});
   document.addEventListener('keydown',e=>{keys[e.key]=true;});
   document.addEventListener('keyup',e=>{keys[e.key]=false;});
   setInterval(()=>{
@@ -82,17 +108,16 @@ function setupInput(){
     }
   },100);
 }
-
-function drawGrapplePreview(me){
+function drawGrapplePreview(me, camX, camY){
   ctx.fillStyle='rgba(255,255,255,0.3)';
   const dirs=[{x:0,y:-1},{x:0,y:1},{x:-1,y:0},{x:1,y:0}];
   for(const d of dirs){
-    let cx=me.x, cy=me.y;
+    let cx=Math.floor(me.x), cy=Math.floor(me.y);
     for(let i=0;i<5;i++){
       cx+=d.x; cy+=d.y;
       if(cx<0||cy<0||cx>=map[0].length||cy>=map.length) break;
-      ctx.fillRect(cx*tileSize+4, cy*tileSize+4, tileSize-8, tileSize-8);
-      if(map[Math.floor(cy)][Math.floor(cx)]===1) break;
+      ctx.fillRect((cx - camX)*tileSize+4, (cy - camY)*tileSize+4, tileSize-8, tileSize-8);
+      if(map[cy][cx]===1) break;
     }
   }
 }
