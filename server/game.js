@@ -88,7 +88,7 @@ function generateMap() {
     }
   }
 }
-function addPlayer() {
+function addPlayer(name = 'Player') {
   let x, y;
   do {
     x = Math.floor(Math.random() * MAP_WIDTH);
@@ -97,10 +97,12 @@ function addPlayer() {
   const id = String(nextPlayerId++);
   players[id] = {
     id,
+    name,
     x: x + 0.5,
     y: y + 0.5,
     hp: PLAYER_HP,
     score: 0,
+    streak: 0,
     lastShoot: 0,
     lastGrapple: 0,
     grapple: null
@@ -141,8 +143,10 @@ function update() {
             if(killer){
               killer.hp = Math.min(killer.hp + REGEN_ON_KILL, PLAYER_HP);
               killer.score++;
+              killer.streak = (killer.streak || 0) + 1;
             }
             p.hp = PLAYER_HP;
+            p.streak = 0;
             let sx,sy;
             do{ sx=Math.floor(Math.random()*MAP_WIDTH); sy=Math.floor(Math.random()*MAP_HEIGHT);}while(map[sy][sx]!==TILE_EMPTY);
             p.x=sx+0.5; p.y=sy+0.5;

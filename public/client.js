@@ -1,9 +1,13 @@
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
+const board = document.getElementById('leaderboard');
+const bctx = board.getContext('2d');
 const tileSize = 16;
 function resize(){
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
+  board.width = 160;
+  board.height = 100;
 }
 window.addEventListener('resize', resize);
 resize();
@@ -99,6 +103,8 @@ function draw() {
   if(me && (keys['ArrowUp']||keys['ArrowDown']||keys['ArrowLeft']||keys['ArrowRight'])){
     drawGrapplePreview({x:mx,y:my}, camX, camY);
   }
+  drawLeaderboard();
+/// help
   if(me){
     const cd = config.grappleCooldown*1000 - (Date.now() - me.lastGrapple);
     ctx.fillStyle='#fff';
@@ -155,8 +161,28 @@ function drawGrapplePreview(me, camX, camY){
   }
 }
 
+function drawLeaderboard(){
+  const arr = Object.values(players).sort((a,b)=> (b.score||0) - (a.score||0));
+  board.height = 20 + arr.length*14;
+  bctx.clearRect(0,0,board.width,board.height);
+  bctx.fillStyle = 'rgba(0,0,0,0.6)';
+  bctx.fillRect(0,0,board.width,board.height);
+  bctx.fillStyle='#fff';
+  bctx.font='12px sans-serif';
+  let y=14;
+  for(const p of arr){
+    bctx.fillStyle='#fff';
+    bctx.fillText(p.name||p.id,4,y);
+    bctx.fillText(String(p.score||0),100,y);
+    bctx.fillStyle='#f00';
+    bctx.fillText(String(p.streak||0),130,y);
+    y+=14;
+  }
+}
+
 function start(){
-  fetch('/join',{method:'POST'}).then(r=>r.json()).then(data=>{
+  const name = prompt('Enter your name');
+  fetch('/join',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name})}).then(r=>r.json()).then(data=>{
     playerId=data.id; map=data.map; config=data.config||config;
     lastHp = config.playerHp;
     const es=new EventSource('/stream?id='+playerId);
