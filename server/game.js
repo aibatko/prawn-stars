@@ -1,7 +1,9 @@
-const MAP_WIDTH = 50;
-const MAP_HEIGHT = 30;
+const MAP_WIDTH = 200;
+const MAP_HEIGHT = 200;
 const TILE_EMPTY = 0;
 const TILE_WALL = 1;
+const PLAYER_SPEED = 0.2;
+const BULLET_SPEED = 0.5;
 const players = {};
 const bullets = [];
 let nextPlayerId = 1;
@@ -25,7 +27,7 @@ function addPlayer() {
     y = Math.floor(Math.random() * MAP_HEIGHT);
   } while (map[y][x] !== TILE_EMPTY);
   const id = String(nextPlayerId++);
-  players[id] = {id, x, y, hp:10, score:0};
+  players[id] = {id, x: x + 0.5, y: y + 0.5, hp:10, score:0};
   return players[id];
 }
 function removePlayer(id) {
@@ -33,7 +35,7 @@ function removePlayer(id) {
 }
 function addBullet(ownerId, dir) {
   const owner = players[ownerId];
-  const speed = 1;
+  const speed = BULLET_SPEED;
   const vel = {x:0,y:0};
   if (dir==='up') vel.y=-speed;
   else if (dir==='down') vel.y=speed;
@@ -60,7 +62,7 @@ function update() {
             p.hp=10;
             let sx,sy;
             do{ sx=Math.floor(Math.random()*MAP_WIDTH); sy=Math.floor(Math.random()*MAP_HEIGHT);}while(map[sy][sx]!==TILE_EMPTY);
-            p.x=sx; p.y=sy;
+            p.x=sx+0.5; p.y=sy+0.5;
           }
           bullets.splice(i,1); break;
         }
@@ -73,7 +75,7 @@ function handleAction(id, action) {
   if (!p) return;
   if (action.type==='move') {
     const dx = action.dx||0; const dy=action.dy||0;
-    const nx = p.x + dx; const ny = p.y + dy;
+    const nx = p.x + dx * PLAYER_SPEED; const ny = p.y + dy * PLAYER_SPEED;
     if (nx>=0&&ny>=0&&nx<MAP_WIDTH&&ny<MAP_HEIGHT&&map[Math.floor(ny)][Math.floor(nx)]===TILE_EMPTY){
       p.x = nx; p.y = ny;
     }
@@ -83,8 +85,16 @@ function handleAction(id, action) {
     const dir=action.dir;
     let dx=0,dy=0;
     if(dir==='up')dy=-1;else if(dir==='down')dy=1;else if(dir==='left')dx=-1;else if(dir==='right')dx=1;
-    let cx=p.x,cy=p.y;
-    for(let i=0;i<5;i++){cx+=dx;cy+=dy;if(cx<0||cy<0||cx>=MAP_WIDTH||cy>=MAP_HEIGHT)break; if(map[Math.floor(cy)][Math.floor(cx)]===TILE_WALL){p.x=cx-dx;p.y=cy-dy;break;}}
+    let cx=Math.floor(p.x), cy=Math.floor(p.y);
+    for(let i=0;i<5;i++){
+      cx+=dx; cy+=dy;
+      if(cx<0||cy<0||cx>=MAP_WIDTH||cy>=MAP_HEIGHT)break;
+      if(map[cy][cx]===TILE_WALL){
+        p.x=cx-dx+0.5;
+        p.y=cy-dy+0.5;
+        break;
+      }
+    }
   }
 }
 function gameState(){
