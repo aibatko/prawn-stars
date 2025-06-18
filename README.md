@@ -52,6 +52,8 @@ Client logic in `public/client.js` uses these endpoints to join the game, listen
 - Simple collision, damage and respawn logic in `game.js`
 - Grapple hook that pulls the player next to the first wall in a direction
 - Basic sound effects and colored rectangles for graphics
+- Small death animation and visible health bars
+- Holding **space** shows the grappling hook range preview
 
 ### Modifying the game
 
