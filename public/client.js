@@ -171,20 +171,47 @@ function setupInput(){
     if(keys['a'])dx-=1;
     if(keys['d'])dx+=1;
     if(dx||dy) send({type:'move',dx,dy});
-    if(keys['i']){send({type:'shoot',dir:'up'}); sndShoot.play();}
-    if(keys['k']){send({type:'shoot',dir:'down'}); sndShoot.play();}
-    if(keys['j']){send({type:'shoot',dir:'left'}); sndShoot.play();}
-    if(keys['l']){send({type:'shoot',dir:'right'}); sndShoot.play();}
-    if(keys['ArrowUp'])send({type:'grapple',dir:'up'});
-    if(keys['ArrowDown'])send({type:'grapple',dir:'down'});
-    if(keys['ArrowLeft'])send({type:'grapple',dir:'left'});
-    if(keys['ArrowRight'])send({type:'grapple',dir:'right'});
+
+    // shooting (supports diagonal when multiple keys are pressed)
+    let sdx=0,sdy=0;
+    if(keys['i']) sdy-=1;
+    if(keys['k']) sdy+=1;
+    if(keys['j']) sdx-=1;
+    if(keys['l']) sdx+=1;
+    if(sdx||sdy){
+      let dir='';
+      if(sdy<0) dir+='up';
+      else if(sdy>0) dir+='down';
+      if(sdx<0) dir+='left';
+      else if(sdx>0) dir+='right';
+      send({type:'shoot',dir});
+      sndShoot.play();
+    }
+
+    // grappling (supports diagonal when multiple arrow keys are pressed)
+    let gdx=0,gdy=0;
+    if(keys['ArrowUp']) gdy-=1;
+    if(keys['ArrowDown']) gdy+=1;
+    if(keys['ArrowLeft']) gdx-=1;
+    if(keys['ArrowRight']) gdx+=1;
+    if(gdx||gdy){
+      let dir='';
+      if(gdy<0) dir+='up';
+      else if(gdy>0) dir+='down';
+      if(gdx<0) dir+='left';
+      else if(gdx>0) dir+='right';
+      send({type:'grapple',dir});
+    }
+
     if(keys['Enter'])send({type:'ability'});
   },100);
 }
 function drawGrapplePreview(me, camX, camY){
   ctx.fillStyle='rgba(255,255,255,0.3)';
-  const dirs=[{x:0,y:-1},{x:0,y:1},{x:-1,y:0},{x:1,y:0}];
+  const dirs=[
+    {x:0,y:-1},{x:0,y:1},{x:-1,y:0},{x:1,y:0},
+    {x:-1,y:-1},{x:1,y:-1},{x:-1,y:1},{x:1,y:1}
+  ];
   for(const d of dirs){
     let cx=Math.floor(me.x), cy=Math.floor(me.y);
     for(let i=0;i<(config.grappleRange||5);i++){
