@@ -16,6 +16,7 @@ Open `http://localhost:3000` in your browser. You can also connect from other ma
 - **WASD** – move
 - **IJKL** – shoot in the four directions
 - **Arrow keys** – grapple hook
+- **Enter** – auto-aim cone ability
 
 Each player has a limited amount of HP (10 by default). Taking damage reduces HP by 1. Killing another player heals you, but HP never exceeds the maximum. Dying respawns you at a random location. The map scrolls with your character so only a small area is visible at once.
 
@@ -25,6 +26,10 @@ At game start you will be prompted for your player name. A small leaderboard
 canvas sits in the top right corner showing all connected players ordered by
 their kill count. The red number next to each entry is the current kill streak
 (reset to zero when that player dies).
+
+Press **Enter** to unleash a short-range shotgun blast that automatically aims
+at the nearest target. A translucent cone shows the ability's area of effect
+for a moment when used.
 
 ## Developer Guide
 
@@ -39,6 +44,7 @@ public/       - client side assets
 server/       - Node.js backend
   server.js   - HTTP server and event stream
   game.js     - game state and rules
+  config.js   - loads values from config.yml
   config.yml  - gameplay parameters
   package.json
 ```
@@ -60,14 +66,16 @@ Client logic in `public/client.js` uses these endpoints to join the game, listen
 - Basic sound effects and colored rectangles for graphics
 - Small death animation and visible health bars
 - Holding an **arrow key** shows the grappling hook range preview
+- Grappling hook line remains visible while you are pulled
 - Grapple cooldown displayed on screen
+- Auto-aim shotgun ability activated with **Enter**
 - Large scrolling map with camera centered on the player
 - Smooth movement between grid cells
 - Browser zoom keys are disabled so everyone sees the same area
 
 ### Modifying the game
 
-- **Changing map size or player stats** – tweak values in `server/config.yml`.
+- **Changing map size or player stats** – tweak values in `server/config.yml` (loaded by `server/config.js`).
 - **Game logic implementation** – handled in `addPlayer`, `update` and `handleAction` inside `server/game.js`.
 - **Client rendering** – update canvas drawing code or add sprites in `public/client.js` and assets under `public/`.
 - **Camera behaviour** – the view follows the current player, computed in `draw()` inside `public/client.js`.
