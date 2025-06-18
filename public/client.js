@@ -17,6 +17,19 @@ const prevPlayers = {};
 let smoothPrev = {};
 let lastUpdate = Date.now();
 let animations = [];
+let config = {
+  playerSpeed: 0.2,
+  bulletSpeed: 0.5,
+  reloadTime: 0.3,
+  grappleSpeed: 1,
+  grappleRange: 5,
+  mapWidth: 100,
+  mapHeight: 50,
+  bulletDamage: 1,
+  playerHp: 10,
+  regenOnKill: 10,
+  grappleCooldown: 5
+};
 const sndShoot = new Audio('assets/shoot.wav');
 const sndKill = new Audio('assets/kill.wav');
 const sndDie = new Audio('assets/die.wav');
@@ -66,7 +79,7 @@ function draw() {
     ctx.fillStyle='#000';
     ctx.fillRect(px - tileSize/2, py - tileSize/2 - 4, tileSize, 3);
     ctx.fillStyle='#0f0';
-    ctx.fillRect(px - tileSize/2, py - tileSize/2 - 4, tileSize*(p.hp/10), 3);
+    ctx.fillRect(px - tileSize/2, py - tileSize/2 - 4, tileSize*(p.hp/config.playerHp), 3);
   }
   ctx.fillStyle='#ff0';
   bullets.forEach(b=>{
@@ -125,7 +138,7 @@ function drawGrapplePreview(me, camX, camY){
   const dirs=[{x:0,y:-1},{x:0,y:1},{x:-1,y:0},{x:1,y:0}];
   for(const d of dirs){
     let cx=Math.floor(me.x), cy=Math.floor(me.y);
-    for(let i=0;i<5;i++){
+    for(let i=0;i<(config.grappleRange||5);i++){
       cx+=d.x; cy+=d.y;
       if(cx<0||cy<0||cx>=map[0].length||cy>=map.length) break;
       ctx.fillRect((cx - camX)*tileSize+4, (cy - camY)*tileSize+4, tileSize-8, tileSize-8);
@@ -136,7 +149,8 @@ function drawGrapplePreview(me, camX, camY){
 
 function start(){
   fetch('/join',{method:'POST'}).then(r=>r.json()).then(data=>{
-    playerId=data.id; map=data.map;
+    playerId=data.id; map=data.map; config=data.config||config;
+    lastHp = config.playerHp;
     const es=new EventSource('/stream?id='+playerId);
     es.onmessage=ev=>{
       const state=JSON.parse(ev.data);
@@ -149,7 +163,7 @@ function start(){
       for(const id in state.players){
         const p=state.players[id];
         const prev=prevPlayers[id];
-        if(prev && p.hp===10 && prev.hp<10 && (p.x!==prev.x || p.y!==prev.y)){
+        if(prev && p.hp===config.playerHp && prev.hp<config.playerHp && (p.x!==prev.x || p.y!==prev.y)){
           animations.push({x:prev.x,y:prev.y,t:0});
         }
         prevPlayers[id]={x:p.x,y:p.y,hp:p.hp};
