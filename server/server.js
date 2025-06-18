@@ -78,4 +78,6 @@ setInterval(()=>{
   }
 }, 100);
 
-http.createServer(serve).listen(PORT, ()=> console.log('Server running on', PORT));
+http.createServer(serve).listen(PORT, '0.0.0.0', () => {
+  console.log('Server running on', PORT);
+});
