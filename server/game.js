@@ -175,7 +175,8 @@ function useAbility(ownerId) {
   if (!target) return;
 
   const angle = Math.atan2(target.y - owner.y, target.x - owner.x);
-  cones.push({x: owner.x, y: owner.y, angle, life: 5});
+  // keep the cone visible for a full second (10 ticks)
+  cones.push({x: owner.x, y: owner.y, angle, life: 10});
 
   for (const id in players) {
     if (id === ownerId) continue;
