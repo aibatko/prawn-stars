@@ -23,6 +23,7 @@ const prevPlayers = {};
 let smoothPrev = {};
 let lastUpdate = Date.now();
 let animations = [];
+let grappleAnims = [];
 let config = {
   playerSpeed: 0.2,
   bulletSpeed: 0.5,
@@ -106,6 +107,19 @@ function draw() {
     ctx.closePath();
     ctx.fill();
   });
+  // grapple lines
+  ctx.strokeStyle = '#0ff';
+  ctx.lineWidth = 2;
+  grappleAnims.forEach(g=>{
+    const p = players[g.id];
+    if(!p){ g.t=100; return; }
+    ctx.beginPath();
+    ctx.moveTo((p.x - camX)*tileSize,(p.y - camY)*tileSize);
+    ctx.lineTo((g.tx - camX)*tileSize,(g.ty - camY)*tileSize);
+    ctx.stroke();
+    g.t++;
+  });
+  grappleAnims = grappleAnims.filter(g=>g.t<5);
   // death animations
   animations.forEach(a=>{
     const alpha = 1 - a.t/10;
@@ -218,10 +232,13 @@ function start(){
       for(const id in state.players){
         const p=state.players[id];
         const prev=prevPlayers[id];
+        if(prev && !prev.grapple && p.grapple){
+          grappleAnims.push({id,tx:p.grapple.x,ty:p.grapple.y,t:0});
+        }
         if(prev && p.hp===config.playerHp && prev.hp<config.playerHp && (p.x!==prev.x || p.y!==prev.y)){
           animations.push({x:prev.x,y:prev.y,t:0});
         }
-        prevPlayers[id]={x:p.x,y:p.y,hp:p.hp};
+        prevPlayers[id]={x:p.x,y:p.y,hp:p.hp,grapple:p.grapple};
       }
       for(const id in prevPlayers){
         if(!state.players[id]) delete prevPlayers[id];
