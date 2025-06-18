@@ -15,7 +15,35 @@ function generateMap() {
       if (y === 0 || y === MAP_HEIGHT-1 || x === 0 || x === MAP_WIDTH-1) {
         map[y][x] = TILE_WALL;
       } else {
-        map[y][x] = Math.random() < 0.1 ? TILE_WALL : TILE_EMPTY;
+        map[y][x] = Math.random() < 0.3 ? TILE_WALL : TILE_EMPTY;
+      }
+    }
+  }
+  // simple cellular automata smoothing
+  for (let it=0; it<2; it++) {
+    const newMap = [];
+    for (let y=0; y<MAP_HEIGHT; y++) {
+      newMap[y] = [];
+      for (let x=0; x<MAP_WIDTH; x++) {
+        if (y===0 || y===MAP_HEIGHT-1 || x===0 || x===MAP_WIDTH-1) {
+          newMap[y][x] = TILE_WALL;
+          continue;
+        }
+        let count = 0;
+        for (let dy=-1; dy<=1; dy++) {
+          for (let dx=-1; dx<=1; dx++) {
+            if (dx===0 && dy===0) continue;
+            if (map[y+dy][x+dx]===TILE_WALL) count++;
+          }
+        }
+        if (count >=5) newMap[y][x]=TILE_WALL;
+        else if (count <=2) newMap[y][x]=TILE_EMPTY;
+        else newMap[y][x]=map[y][x];
+      }
+    }
+    for (let y=0; y<MAP_HEIGHT; y++) {
+      for (let x=0; x<MAP_WIDTH; x++) {
+        map[y][x] = newMap[y][x];
       }
     }
   }
