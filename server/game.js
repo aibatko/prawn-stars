@@ -15,6 +15,20 @@ const aoes = [];
 let nextPlayerId = 1;
 const map = [];
 
+function dirToAngle(dir) {
+  switch (dir) {
+    case 'up': return -Math.PI / 2;
+    case 'down': return Math.PI / 2;
+    case 'left': return Math.PI;
+    case 'right': return 0;
+    case 'upleft': return -3 * Math.PI / 4;
+    case 'upright': return -Math.PI / 4;
+    case 'downleft': return 3 * Math.PI / 4;
+    case 'downright': return Math.PI / 4;
+    default: return 0;
+  }
+}
+
 function damagePlayer(target, amount, attackerId) {
   target.hp -= amount;
   if (target.hp <= 0) {
@@ -96,7 +110,8 @@ function addPlayer(name = 'Player', cls = 'class1') {
     lastShoot: 0,
     lastGrapple: 0,
     lastAbility: 0,
-    grapple: null
+    grapple: null,
+    freeze: 0
   };
   return players[id];
 }
@@ -110,22 +125,28 @@ function addBullet(ownerId, dir) {
   if (now - owner.lastShoot < reloadTime) return;
   owner.lastShoot = now;
   const speed = owner.stats.bulletSpeed;
-  const diag = speed/Math.SQRT2;
-  const vel = {x:0,y:0};
-  if (dir==='up') vel.y=-speed;
-  else if (dir==='down') vel.y=speed;
-  else if (dir==='left') vel.x=-speed;
-  else if (dir==='right') vel.x=speed;
-  else if (dir==='upleft'){ vel.x=-diag; vel.y=-diag; }
-  else if (dir==='upright'){ vel.x=diag; vel.y=-diag; }
-  else if (dir==='downleft'){ vel.x=-diag; vel.y=diag; }
-  else if (dir==='downright'){ vel.x=diag; vel.y=diag; }
+  let vx = 0, vy = 0;
+  if (owner.stats.sprayAngle) {
+    const ang = dirToAngle(dir) + (Math.random() - 0.5) * owner.stats.sprayAngle;
+    vx = Math.cos(ang) * speed;
+    vy = Math.sin(ang) * speed;
+  } else {
+    const diag = speed/Math.SQRT2;
+    if (dir==='up') vy=-speed;
+    else if (dir==='down') vy=speed;
+    else if (dir==='left') vx=-speed;
+    else if (dir==='right') vx=speed;
+    else if (dir==='upleft'){ vx=-diag; vy=-diag; }
+    else if (dir==='upright'){ vx=diag; vy=-diag; }
+    else if (dir==='downleft'){ vx=-diag; vy=diag; }
+    else if (dir==='downright'){ vx=diag; vy=diag; }
+  }
   const life = Math.ceil((owner.stats.bulletRange || 999) / speed);
   bullets.push({
     x: owner.x,
     y: owner.y,
-    vx: vel.x,
-    vy: vel.y,
+    vx,
+    vy,
     owner: ownerId,
     damage: owner.stats.bulletDamage,
     life,
@@ -154,6 +175,24 @@ function useAbility(ownerId) {
   if (!target) return;
 
   const angle = Math.atan2(target.y - owner.y, target.x - owner.x);
+  if (owner.stats.rocketCount) {
+    const delay = owner.stats.rocketDelay || 10; // ticks
+    const interval = owner.stats.rocketInterval || 5;
+    for (let i = 0; i < owner.stats.rocketCount; i++) {
+      aoes.push({
+        x: target.x,
+        y: target.y,
+        owner: ownerId,
+        radius: owner.stats.rocketRadius || 2,
+        damage: owner.stats.rocketDamage || owner.stats.abilityDamage || 3,
+        hits: 1,
+        interval: 1,
+        tick: delay + i * interval,
+        color: 'rgba(255,0,0,0.6)'
+      });
+    }
+    return;
+  }
   if (owner.stats.flameCone) {
     const dur = (owner.stats.flameDuration || 3) * 10;
     const width = owner.stats.flameAngle || (CONE_ANGLE/2);
@@ -182,6 +221,13 @@ function useAbility(ownerId) {
   }
 }
 function update() {
+  for (const id in players) {
+    const p = players[id];
+    if (p.freeze && p.freeze > 0) {
+      p.freeze -= 1;
+      if (p.freeze < 0) p.freeze = 0;
+    }
+  }
   // update bullets with sub-steps to avoid skipping over players/walls
   for (let i = bullets.length - 1; i >= 0; i--) {
     const b = bullets[i];
@@ -199,6 +245,9 @@ function update() {
         const p = players[id];
         if (Math.floor(p.x) === Math.floor(b.x) && Math.floor(p.y) === Math.floor(b.y)) {
           if (id !== b.owner) {
+            if (b.freeze) {
+              p.freeze = Math.max(p.freeze || 0, b.freeze);
+            }
             p.hp -= b.damage;
             if (p.hp <= 0) {
               const killer = players[b.owner];
@@ -307,6 +356,7 @@ function update() {
 function handleAction(id, action) {
   const p = players[id];
   if (!p) return;
+  if (p.freeze && p.freeze > 0) return;
   if (action.type==='move') {
     if (p.grapple) return;
     const dx = action.dx||0; const dy=action.dy||0;
@@ -321,6 +371,24 @@ function handleAction(id, action) {
     const cooldown = p.stats.grappleCooldown * 1000;
     if (now - p.lastGrapple < cooldown || p.grapple) return;
     const dir = action.dir;
+    if (p.stats.freezeArrow) {
+      const speed = p.stats.freezeSpeed || 3;
+      const ang = dirToAngle(dir);
+      bullets.push({
+        x: p.x,
+        y: p.y,
+        vx: Math.cos(ang) * speed,
+        vy: Math.sin(ang) * speed,
+        owner: id,
+        damage: 0,
+        freeze: p.stats.freezeDuration || 30,
+        life: Math.ceil((p.stats.freezeRange || 6) / speed),
+        size: p.stats.bulletSize || 4,
+        color: 'cyan'
+      });
+      p.lastGrapple = now;
+      return;
+    }
     let dx=0,dy=0;
     if(dir==='up')dy=-1;
     else if(dir==='down')dy=1;
