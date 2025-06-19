@@ -1,34 +1,33 @@
 const fs = require('fs');
 const path = require('path');
 
-function loadConfig() {
-  const file = path.join(__dirname, 'config.yml');
-  const cfg = {
-    playerSpeed: 0.2,
-    bulletSpeed: 0.5,
-    reloadTime: 0.3,
-    grappleSpeed: 1,
-    grappleRange: 5,
-    mapWidth: 100,
-    mapHeight: 50,
-    bulletDamage: 1,
-    playerHp: 10,
-    regenOnKill: 10,
-    grappleCooldown: 5,
-    abilityCooldown: 5,
-    abilityDamage: 6,
-    abilityRange: 4
-  };
+const CONFIG_DIR = path.join(__dirname, 'configs');
+
+function parseFile(file) {
+  const cfg = {};
   try {
     const data = fs.readFileSync(file, 'utf8');
     data.split(/\r?\n/).forEach(line => {
       const t = line.trim();
       if (!t || t.startsWith('#')) return;
       const [k, v] = t.split(/:\s*/);
-      cfg[k] = parseFloat(v);
+      const num = parseFloat(v);
+      cfg[k] = isNaN(num) ? v.trim() : num;
     });
   } catch (_) {}
   return cfg;
 }
 
-module.exports = loadConfig();
+function loadConfigs() {
+  const files = fs.readdirSync(CONFIG_DIR);
+  const game = parseFile(path.join(CONFIG_DIR, 'game.yml'));
+  const classes = {};
+  files.forEach(f => {
+    if (f === 'game.yml' || !f.endsWith('.yml')) return;
+    const name = f.replace(/\.yml$/, '');
+    classes[name] = parseFile(path.join(CONFIG_DIR, f));
+  });
+  return { game, classes };
+}
+
+module.exports = loadConfigs();

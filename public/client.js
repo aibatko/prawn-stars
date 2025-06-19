@@ -214,7 +214,6 @@ function setupInput(){
       if(gdx<0) dir+='left';
       else if(gdx>0) dir+='right';
       send({type:'grapple',dir});
-      playSound(sndGrapple,true);
     }
 
     if(keys['Enter']){
@@ -261,7 +260,8 @@ function drawLeaderboard(){
 
 function start(){
   const name = prompt('Enter your name');
-  fetch('/join',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name})}).then(r=>r.json()).then(data=>{
+  const cls = prompt('Choose your class (class1, class2, class3)') || 'class1';
+  fetch('/join',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name, class: cls})}).then(r=>r.json()).then(data=>{
     playerId=data.id; map=data.map; config=data.config||config;
     lastHp = config.playerHp;
     const es=new EventSource('/stream?id='+playerId);
