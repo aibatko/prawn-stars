@@ -40,12 +40,11 @@ let config = {
   abilityDamage: 6,
   abilityRange: 4
 };
-const sndShoot = new Audio('assets/gunshot.wav');
-const sndKill = new Audio('assets/laser_pew.wav');
-const sndDie = new Audio('assets/player_death_scream.wav');
-const sndGrapple = new Audio('assets/grappling_hook_zzzzup.wav');
+const sndShoot = document.getElementById('sndShoot');
+const sndKill = document.getElementById('sndKill');
+const sndDie = document.getElementById('sndDie');
+const sndGrapple = document.getElementById('sndGrapple');
 [sndShoot, sndKill, sndDie, sndGrapple].forEach(s => { s.volume = 1; });
-sndGrapple.loop = true;
 
 function draw() {
   ctx.clearRect(0,0,canvas.width,canvas.height);
