@@ -44,7 +44,8 @@ const sndShoot = document.getElementById('sndShoot');
 const sndKill = document.getElementById('sndKill');
 const sndDie = document.getElementById('sndDie');
 const sndGrapple = document.getElementById('sndGrapple');
-[sndShoot, sndKill, sndDie, sndGrapple].forEach(s => { s.volume = 1; });
+const sndAbility = document.getElementById('sndAbility');
+[sndShoot, sndKill, sndDie, sndGrapple, sndAbility].forEach(s => { s.volume = 1; });
 
 function playSound(el, reset=false){
   if(reset){
@@ -216,7 +217,10 @@ function setupInput(){
       playSound(sndGrapple,true);
     }
 
-    if(keys['Enter'])send({type:'ability'});
+    if(keys['Enter']){
+      send({type:'ability'});
+      playSound(sndAbility,true);
+    }
   },100);
 }
 function drawGrapplePreview(me, camX, camY){
