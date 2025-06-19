@@ -214,7 +214,6 @@ function setupInput(){
       if(gdx<0) dir+='left';
       else if(gdx>0) dir+='right';
       send({type:'grapple',dir});
-      playSound(sndGrapple,true);
     }
 
     if(keys['Enter']){
