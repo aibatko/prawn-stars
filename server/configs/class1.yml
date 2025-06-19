@@ -1,5 +1,5 @@
 name: Soldier
-image: soldier.png
+image: solder.png
 playerSpeed: 0.8
 bulletSpeed: 2.5
 reloadTime: 0.3
