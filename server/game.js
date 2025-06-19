@@ -10,6 +10,8 @@ const CONE_ANGLE = Math.PI / 3; // 60 degree cone
 const players = {};
 const bullets = [];
 const cones = [];
+const flames = [];
+const aoes = [];
 let nextPlayerId = 1;
 const map = [];
 
@@ -118,7 +120,18 @@ function addBullet(ownerId, dir) {
   else if (dir==='upright'){ vel.x=diag; vel.y=-diag; }
   else if (dir==='downleft'){ vel.x=-diag; vel.y=diag; }
   else if (dir==='downright'){ vel.x=diag; vel.y=diag; }
-  bullets.push({x:owner.x, y:owner.y, vx:vel.x, vy:vel.y, owner:ownerId, damage: owner.stats.bulletDamage});
+  const life = Math.ceil((owner.stats.bulletRange || 999) / speed);
+  bullets.push({
+    x: owner.x,
+    y: owner.y,
+    vx: vel.x,
+    vy: vel.y,
+    owner: ownerId,
+    damage: owner.stats.bulletDamage,
+    life,
+    size: owner.stats.bulletSize || 4,
+    color: owner.stats.bulletColor || '#ff0'
+  });
 }
 
 function useAbility(ownerId) {
@@ -141,22 +154,30 @@ function useAbility(ownerId) {
   if (!target) return;
 
   const angle = Math.atan2(target.y - owner.y, target.x - owner.x);
-  // keep the cone visible for a full second (10 ticks)
-  cones.push({x: owner.x, y: owner.y, angle, life: 10});
+  if (owner.stats.flameCone) {
+    const dur = (owner.stats.flameDuration || 3) * 10;
+    const width = owner.stats.flameAngle || (CONE_ANGLE/2);
+    const range = owner.stats.flameRange || owner.stats.abilityRange;
+    cones.push({x: owner.x, y: owner.y, angle, life: dur, width: width, range: range, color: owner.stats.flameColor || 'rgba(255,128,0,0.4)'});
+    flames.push({x: owner.x, y: owner.y, angle, life: dur, width, range, damage: owner.stats.abilityDamage, interval: (owner.stats.flameInterval||10), tick:0, owner: ownerId});
+  } else {
+    // keep the cone visible for a full second (10 ticks)
+    cones.push({x: owner.x, y: owner.y, angle, life: 10, width: CONE_ANGLE, range: owner.stats.abilityRange});
 
-  for (const id in players) {
-    if (id === ownerId) continue;
-    const p = players[id];
-    const dx = p.x - owner.x;
-    const dy = p.y - owner.y;
-    const dist = Math.sqrt(dx*dx + dy*dy);
-    const abilityRange = owner.stats.abilityRange;
-    if (dist > abilityRange) continue;
-    const ang = Math.atan2(dy, dx);
-    let diff = Math.abs(ang - angle);
-    if (diff > Math.PI) diff = Math.abs(diff - 2*Math.PI);
-    if (diff <= CONE_ANGLE/2) {
-      damagePlayer(p, owner.stats.abilityDamage, ownerId);
+    for (const id in players) {
+      if (id === ownerId) continue;
+      const p = players[id];
+      const dx = p.x - owner.x;
+      const dy = p.y - owner.y;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      const abilityRange = owner.stats.abilityRange;
+      if (dist > abilityRange) continue;
+      const ang = Math.atan2(dy, dx);
+      let diff = Math.abs(ang - angle);
+      if (diff > Math.PI) diff = Math.abs(diff - 2*Math.PI);
+      if (diff <= CONE_ANGLE/2) {
+        damagePlayer(p, owner.stats.abilityDamage, ownerId);
+      }
     }
   }
 }
@@ -199,12 +220,56 @@ function update() {
       }
       if (removed) break;
     }
+    if (!removed) {
+      b.life -= 1;
+      if (b.life <= 0) removed = true;
+    }
     if (removed) bullets.splice(i, 1);
   }
 
   for (let i = cones.length - 1; i >= 0; i--) {
     cones[i].life -= 1;
     if (cones[i].life <= 0) cones.splice(i, 1);
+  }
+
+  for (let i = flames.length - 1; i >= 0; i--) {
+    const f = flames[i];
+    f.life -= 1;
+    f.tick -= 1;
+    if (f.tick <= 0) {
+      for (const id in players) {
+        if (id === f.owner) continue;
+        const p = players[id];
+        const dx = p.x - f.x;
+        const dy = p.y - f.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist > f.range) continue;
+        const ang = Math.atan2(dy, dx);
+        let diff = Math.abs(ang - f.angle);
+        if (diff > Math.PI) diff = Math.abs(diff - 2*Math.PI);
+        if (diff <= f.width/2) damagePlayer(p, f.damage, f.owner);
+      }
+      f.tick = f.interval;
+    }
+    if (f.life <= 0) flames.splice(i, 1);
+  }
+
+  for (let i = aoes.length - 1; i >= 0; i--) {
+    const a = aoes[i];
+    a.tick -= 1;
+    if (a.tick <= 0) {
+      for (const id in players) {
+        if (id === a.owner) continue;
+        const p = players[id];
+        const dx = p.x - a.x;
+        const dy = p.y - a.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist <= a.radius) damagePlayer(p, a.damage, a.owner);
+      }
+      a.tick = a.interval;
+      a.hits -= 1;
+    }
+    if (a.hits <= 0) aoes.splice(i, 1);
   }
 
   // update grappling players
@@ -221,7 +286,21 @@ function update() {
       if ((dy <= 0 && ny <= gy) || (dy >= 0 && ny >= gy)) ny = gy;
       p.x = nx;
       p.y = ny;
-      if (p.x === gx && p.y === gy) p.grapple = null;
+      if (p.x === gx && p.y === gy) {
+        if (p.grapple.type === 'jump') {
+          aoes.push({
+            x: p.x,
+            y: p.y,
+            owner: id,
+            radius: p.stats.aoeRadius || 2,
+            damage: p.stats.aoeDamage || 5,
+            hits: p.stats.aoeHits || 3,
+            interval: 1,
+            tick: 1
+          });
+        }
+        p.grapple = null;
+      }
     }
   }
 }
@@ -252,13 +331,23 @@ function handleAction(id, action) {
     else if(dir==='downleft'){dx=-1;dy=1;}
     else if(dir==='downright'){dx=1;dy=1;}
     let cx=Math.floor(p.x), cy=Math.floor(p.y);
-    for(let i=0;i<p.stats.grappleRange;i++){
-      cx+=dx; cy+=dy;
-      if(cx<0||cy<0||cx>=MAP_WIDTH||cy>=MAP_HEIGHT)break;
-      if(map[cy][cx]===TILE_WALL){
-        p.grapple = {x:cx-dx+0.5, y:cy-dy+0.5};
-        p.lastGrapple = now;
-        break;
+    if (p.stats.jump) {
+      for(let i=0;i<p.stats.grappleRange;i++){
+        cx+=dx; cy+=dy;
+        if(cx<0||cy<0||cx>=MAP_WIDTH||cy>=MAP_HEIGHT) { cx-=dx; cy-=dy; break; }
+        if(map[cy][cx]===TILE_WALL){ cx-=dx; cy-=dy; break; }
+      }
+      p.grapple = {x:cx+0.5, y:cy+0.5, type:'jump'};
+      p.lastGrapple = now;
+    } else {
+      for(let i=0;i<p.stats.grappleRange;i++){
+        cx+=dx; cy+=dy;
+        if(cx<0||cy<0||cx>=MAP_WIDTH||cy>=MAP_HEIGHT)break;
+        if(map[cy][cx]===TILE_WALL){
+          p.grapple = {x:cx-dx+0.5, y:cy-dy+0.5};
+          p.lastGrapple = now;
+          break;
+        }
       }
     }
   } else if (action.type==='ability') {
@@ -266,7 +355,7 @@ function handleAction(id, action) {
   }
 }
 function gameState(){
-  return {players, bullets, cones, map};
+  return {players, bullets, cones, flames, aoes, map};
 }
 
 module.exports = {
@@ -279,5 +368,7 @@ module.exports = {
   map,
   players,
   bullets,
-  cones
+  cones,
+  flames,
+  aoes
 };

@@ -17,6 +17,8 @@ let map = [];
 let players = {};
 let bullets = [];
 let cones = [];
+let flames = [];
+let aoes = [];
 let lastHp = 10;
 const keys = {};
 const prevPlayers = {};
@@ -38,7 +40,10 @@ let config = {
   grappleCooldown: 5,
   abilityCooldown: 5,
   abilityDamage: 6,
-  abilityRange: 4
+  abilityRange: 4,
+  bulletRange: 20,
+  bulletSize: 4,
+  bulletColor: '#ff0'
 };
 const sndShoot = document.getElementById('sndShoot');
 const sndKill = document.getElementById('sndKill');
@@ -116,22 +121,30 @@ function draw() {
     ctx.fillStyle='#0f0';
     ctx.fillRect(px - size/2, py - size/2 - 4, size*(p.hp/config.playerHp), 3);
   }
-  ctx.fillStyle='#ff0';
   bullets.forEach(b=>{
     const bx = (b.x - b.vx*(1 - t) - camX) * tileSize;
     const by = (b.y - b.vy*(1 - t) - camY) * tileSize;
-    ctx.fillRect(bx-2, by-2, 4, 4);
+    ctx.fillStyle = b.color || config.bulletColor || '#ff0';
+    const size = (b.size || config.bulletSize || 4);
+    ctx.fillRect(bx-size/2, by-size/2, size, size);
   });
-  ctx.fillStyle='rgba(255,0,0,0.4)';
   cones.forEach(c=>{
+    ctx.fillStyle = c.color || 'rgba(255,0,0,0.4)';
     const startX=(c.x - camX)*tileSize;
     const startY=(c.y - camY)*tileSize;
-    const range=(config.abilityRange||4)*tileSize;
+    const range=(c.range || config.abilityRange || 4)*tileSize;
+    const width=(c.width || CONE_ANGLE);
     ctx.beginPath();
     ctx.moveTo(startX,startY);
-    ctx.lineTo(startX+Math.cos(c.angle-CONE_ANGLE/2)*range,startY+Math.sin(c.angle-CONE_ANGLE/2)*range);
-    ctx.lineTo(startX+Math.cos(c.angle+CONE_ANGLE/2)*range,startY+Math.sin(c.angle+CONE_ANGLE/2)*range);
+    ctx.lineTo(startX+Math.cos(c.angle-width/2)*range,startY+Math.sin(c.angle-width/2)*range);
+    ctx.lineTo(startX+Math.cos(c.angle+width/2)*range,startY+Math.sin(c.angle+width/2)*range);
     ctx.closePath();
+    ctx.fill();
+  });
+  ctx.fillStyle='rgba(255,100,0,0.4)';
+  aoes.forEach(a=>{
+    ctx.beginPath();
+    ctx.arc((a.x - camX)*tileSize,(a.y - camY)*tileSize,a.radius*tileSize,0,Math.PI*2);
     ctx.fill();
   });
   // grapple lines
@@ -287,7 +300,12 @@ function start(cls){
         if(players[id]) smoothPrev[id]={x:players[id].x,y:players[id].y};
         else smoothPrev[id]={x:state.players[id].x,y:state.players[id].y};
       }
-      players=state.players;bullets=state.bullets;cones=state.cones||[];lastUpdate=Date.now();
+      players=state.players;
+      bullets=state.bullets;
+      cones=state.cones||[];
+      flames=state.flames||[];
+      aoes=state.aoes||[];
+      lastUpdate=Date.now();
       for(const id in state.players){
         const p=state.players[id];
         const prev=prevPlayers[id];
