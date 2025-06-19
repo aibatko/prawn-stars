@@ -3,13 +3,10 @@ bulletSpeed: 2.5
 reloadTime: 0.3
 grappleSpeed: 2
 grappleRange: 15
-mapWidth: 100
-mapHeight: 50
 bulletDamage: 1
 playerHp: 10
 regenOnKill: 10
 grappleCooldown: 3
-# ability parameters
 abilityCooldown: 5
 abilityDamage: 6
 abilityRange: 4
