@@ -250,6 +250,7 @@ function start(){
     playerId=data.id; map=data.map; config=data.config||config;
     lastHp = config.playerHp;
     const es=new EventSource('/stream?id='+playerId);
+
     es.onmessage=ev=>{
       const state=JSON.parse(ev.data);
       smoothPrev={};
@@ -279,6 +280,7 @@ function start(){
         lastHp=me.hp;
       }
     };
+
     draw();
     setupInput();
   });
