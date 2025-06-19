@@ -40,12 +40,19 @@ let config = {
   abilityDamage: 6,
   abilityRange: 4
 };
-const sndShoot = new Audio('assets/gunshot.wav');
-const sndKill = new Audio('assets/laser_pew.wav');
-const sndDie = new Audio('assets/player_death_scream.wav');
-const sndGrapple = new Audio('assets/grappling_hook_zzzzup.wav');
+const sndShoot = document.getElementById('sndShoot');
+const sndKill = document.getElementById('sndKill');
+const sndDie = document.getElementById('sndDie');
+const sndGrapple = document.getElementById('sndGrapple');
 [sndShoot, sndKill, sndDie, sndGrapple].forEach(s => { s.volume = 1; });
-sndGrapple.loop = true;
+
+function playSound(el, reset=false){
+  if(reset){
+    try{ el.currentTime = 0; }catch(e){}
+  }
+  const p = el.play();
+  if(p && p.catch) p.catch(() => {});
+}
 
 function draw() {
   ctx.clearRect(0,0,canvas.width,canvas.height);
@@ -190,7 +197,7 @@ function setupInput(){
       if(sdx<0) dir+='left';
       else if(sdx>0) dir+='right';
       send({type:'shoot',dir});
-      sndShoot.play();
+      playSound(sndShoot,true);
     }
 
     // grappling (supports diagonal when multiple arrow keys are pressed)
@@ -206,8 +213,7 @@ function setupInput(){
       if(gdx<0) dir+='left';
       else if(gdx>0) dir+='right';
       send({type:'grapple',dir});
-      sndGrapple.currentTime = 0;
-      sndGrapple.play();
+      playSound(sndGrapple,true);
     }
 
     if(keys['Enter'])send({type:'ability'});
@@ -280,10 +286,10 @@ function start(){
       }
       const me=players[playerId];
       if(me){
-        if(me.hp<lastHp) sndDie.play();
-        else if(me.hp>lastHp) sndKill.play();
+        if(me.hp<lastHp) playSound(sndDie,true);
+        else if(me.hp>lastHp) playSound(sndKill,true);
         if(me.grapple){
-          if(sndGrapple.paused) sndGrapple.play();
+          if(sndGrapple.paused) playSound(sndGrapple);
         } else {
           if(!sndGrapple.paused){
             sndGrapple.pause();
