@@ -11,7 +11,8 @@ function parseFile(file) {
       const t = line.trim();
       if (!t || t.startsWith('#')) return;
       const [k, v] = t.split(/:\s*/);
-      cfg[k] = parseFloat(v);
+      const num = parseFloat(v);
+      cfg[k] = isNaN(num) ? v.trim() : num;
     });
   } catch (_) {}
   return cfg;
