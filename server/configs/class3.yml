@@ -1,0 +1,12 @@
+playerSpeed: 0.8
+bulletSpeed: 2.5
+reloadTime: 0.3
+grappleSpeed: 2
+grappleRange: 15
+bulletDamage: 1
+playerHp: 10
+regenOnKill: 10
+grappleCooldown: 3
+abilityCooldown: 5
+abilityDamage: 6
+abilityRange: 4

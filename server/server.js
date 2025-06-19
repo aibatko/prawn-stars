@@ -3,6 +3,7 @@ const fs = require('fs');
 const url = require('url');
 const path = require('path');
 const game = require('./game');
+const configs = require('./config');
 
 const clients = new Map();
 const PORT = 3000;
@@ -23,13 +24,16 @@ function handleJoin(req, res) {
   req.on('data', chunk => body += chunk);
   req.on('end', () => {
     let name = 'Player';
+    let cls = 'class1';
     try {
       const data = JSON.parse(body);
       if (data.name) name = String(data.name).slice(0, 20);
+      if (data.class) cls = String(data.class);
     } catch (_) {}
-    const player = game.addPlayer(name);
+    const player = game.addPlayer(name, cls);
+    const playerCfg = Object.assign({}, configs.game, configs.classes[cls] || configs.classes[Object.keys(configs.classes)[0]]);
     res.writeHead(200, {'Content-Type': 'application/json'});
-    res.end(JSON.stringify({id: player.id, map: game.map, config: game.config}));
+    res.end(JSON.stringify({id: player.id, map: game.map, config: playerCfg}));
   });
 }
 

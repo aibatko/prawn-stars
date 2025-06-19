@@ -1,29 +1,11 @@
-const config = require('./config');
+const { game: GAME_CONFIG, classes: CLASS_CONFIGS } = require('./config');
 
 const TILE_EMPTY = 0;
 const TILE_WALL = 1;
 
+const MAP_WIDTH = GAME_CONFIG.mapWidth || 100;
+const MAP_HEIGHT = GAME_CONFIG.mapHeight || 50;
 
-const {
-  mapWidth: MAP_WIDTH,
-  mapHeight: MAP_HEIGHT,
-  playerSpeed: PLAYER_SPEED,
-  bulletSpeed: BULLET_SPEED,
-  reloadTime,
-  grappleSpeed: GRAPPLE_SPEED,
-  grappleRange: GRAPPLE_RANGE,
-  bulletDamage: BULLET_DAMAGE,
-  playerHp: PLAYER_HP,
-  regenOnKill: REGEN_ON_KILL,
-  grappleCooldown,
-  abilityCooldown,
-  abilityDamage: ABILITY_DAMAGE,
-  abilityRange: ABILITY_RANGE
-} = config;
-
-const RELOAD_TIME = reloadTime * 1000;
-const GRAPPLE_COOLDOWN = grappleCooldown * 1000;
-const ABILITY_COOLDOWN = abilityCooldown * 1000;
 const CONE_ANGLE = Math.PI / 3; // 60 degree cone
 const players = {};
 const bullets = [];
@@ -36,11 +18,11 @@ function damagePlayer(target, amount, attackerId) {
   if (target.hp <= 0) {
     const killer = players[attackerId];
     if (killer) {
-      killer.hp = Math.min(killer.hp + REGEN_ON_KILL, PLAYER_HP);
+      killer.hp = Math.min(killer.hp + killer.stats.regenOnKill, killer.stats.playerHp);
       killer.score++;
       killer.streak = (killer.streak || 0) + 1;
     }
-    target.hp = PLAYER_HP;
+    target.hp = target.stats.playerHp;
     target.streak = 0;
     let sx, sy;
     do {
@@ -91,7 +73,8 @@ function generateMap() {
     }
   }
 }
-function addPlayer(name = 'Player') {
+function addPlayer(name = 'Player', cls = 'class1') {
+  const stats = CLASS_CONFIGS[cls] || CLASS_CONFIGS[Object.keys(CLASS_CONFIGS)[0]];
   let x, y;
   do {
     x = Math.floor(Math.random() * MAP_WIDTH);
@@ -101,9 +84,11 @@ function addPlayer(name = 'Player') {
   players[id] = {
     id,
     name,
+    class: cls,
+    stats,
     x: x + 0.5,
     y: y + 0.5,
-    hp: PLAYER_HP,
+    hp: stats.playerHp,
     score: 0,
     streak: 0,
     lastShoot: 0,
@@ -119,9 +104,10 @@ function removePlayer(id) {
 function addBullet(ownerId, dir) {
   const owner = players[ownerId];
   const now = Date.now();
-  if (now - owner.lastShoot < RELOAD_TIME) return;
+  const reloadTime = owner.stats.reloadTime * 1000;
+  if (now - owner.lastShoot < reloadTime) return;
   owner.lastShoot = now;
-  const speed = BULLET_SPEED;
+  const speed = owner.stats.bulletSpeed;
   const diag = speed/Math.SQRT2;
   const vel = {x:0,y:0};
   if (dir==='up') vel.y=-speed;
@@ -132,13 +118,14 @@ function addBullet(ownerId, dir) {
   else if (dir==='upright'){ vel.x=diag; vel.y=-diag; }
   else if (dir==='downleft'){ vel.x=-diag; vel.y=diag; }
   else if (dir==='downright'){ vel.x=diag; vel.y=diag; }
-  bullets.push({x:owner.x, y:owner.y, vx:vel.x, vy:vel.y, owner:ownerId});
+  bullets.push({x:owner.x, y:owner.y, vx:vel.x, vy:vel.y, owner:ownerId, damage: owner.stats.bulletDamage});
 }
 
 function useAbility(ownerId) {
   const owner = players[ownerId];
   const now = Date.now();
-  if (now - owner.lastAbility < ABILITY_COOLDOWN) return;
+  const abilityCooldown = owner.stats.abilityCooldown * 1000;
+  if (now - owner.lastAbility < abilityCooldown) return;
   owner.lastAbility = now;
 
   let target = null;
@@ -163,12 +150,13 @@ function useAbility(ownerId) {
     const dx = p.x - owner.x;
     const dy = p.y - owner.y;
     const dist = Math.sqrt(dx*dx + dy*dy);
-    if (dist > ABILITY_RANGE) continue;
+    const abilityRange = owner.stats.abilityRange;
+    if (dist > abilityRange) continue;
     const ang = Math.atan2(dy, dx);
     let diff = Math.abs(ang - angle);
     if (diff > Math.PI) diff = Math.abs(diff - 2*Math.PI);
     if (diff <= CONE_ANGLE/2) {
-      damagePlayer(p, ABILITY_DAMAGE, ownerId);
+      damagePlayer(p, owner.stats.abilityDamage, ownerId);
     }
   }
 }
@@ -190,15 +178,15 @@ function update() {
         const p = players[id];
         if (Math.floor(p.x) === Math.floor(b.x) && Math.floor(p.y) === Math.floor(b.y)) {
           if (id !== b.owner) {
-            p.hp -= BULLET_DAMAGE;
+            p.hp -= b.damage;
             if (p.hp <= 0) {
               const killer = players[b.owner];
               if (killer) {
-                killer.hp = Math.min(killer.hp + REGEN_ON_KILL, PLAYER_HP);
+                killer.hp = Math.min(killer.hp + killer.stats.regenOnKill, killer.stats.playerHp);
                 killer.score++;
                 killer.streak = (killer.streak || 0) + 1;
               }
-              p.hp = PLAYER_HP;
+              p.hp = p.stats.playerHp;
               p.streak = 0;
               let sx, sy;
               do { sx = Math.floor(Math.random() * MAP_WIDTH); sy = Math.floor(Math.random() * MAP_HEIGHT); } while (map[sy][sx] !== TILE_EMPTY);
@@ -227,8 +215,8 @@ function update() {
       const gy = p.grapple.y;
       const dx = Math.sign(gx - p.x);
       const dy = Math.sign(gy - p.y);
-      let nx = p.x + dx * GRAPPLE_SPEED;
-      let ny = p.y + dy * GRAPPLE_SPEED;
+      let nx = p.x + dx * p.stats.grappleSpeed;
+      let ny = p.y + dy * p.stats.grappleSpeed;
       if ((dx <= 0 && nx <= gx) || (dx >= 0 && nx >= gx)) nx = gx;
       if ((dy <= 0 && ny <= gy) || (dy >= 0 && ny >= gy)) ny = gy;
       p.x = nx;
@@ -243,7 +231,7 @@ function handleAction(id, action) {
   if (action.type==='move') {
     if (p.grapple) return;
     const dx = action.dx||0; const dy=action.dy||0;
-    const nx = p.x + dx * PLAYER_SPEED; const ny = p.y + dy * PLAYER_SPEED;
+    const nx = p.x + dx * p.stats.playerSpeed; const ny = p.y + dy * p.stats.playerSpeed;
     if (nx>=0&&ny>=0&&nx<MAP_WIDTH&&ny<MAP_HEIGHT&&map[Math.floor(ny)][Math.floor(nx)]===TILE_EMPTY){
       p.x = nx; p.y = ny;
     }
@@ -251,7 +239,8 @@ function handleAction(id, action) {
     addBullet(id, action.dir);
   } else if (action.type==='grapple') {
     const now = Date.now();
-    if (now - p.lastGrapple < GRAPPLE_COOLDOWN || p.grapple) return;
+    const cooldown = p.stats.grappleCooldown * 1000;
+    if (now - p.lastGrapple < cooldown || p.grapple) return;
     const dir = action.dir;
     let dx=0,dy=0;
     if(dir==='up')dy=-1;
@@ -263,7 +252,7 @@ function handleAction(id, action) {
     else if(dir==='downleft'){dx=-1;dy=1;}
     else if(dir==='downright'){dx=1;dy=1;}
     let cx=Math.floor(p.x), cy=Math.floor(p.y);
-    for(let i=0;i<GRAPPLE_RANGE;i++){
+    for(let i=0;i<p.stats.grappleRange;i++){
       cx+=dx; cy+=dy;
       if(cx<0||cy<0||cx>=MAP_WIDTH||cy>=MAP_HEIGHT)break;
       if(map[cy][cx]===TILE_WALL){
@@ -279,4 +268,16 @@ function handleAction(id, action) {
 function gameState(){
   return {players, bullets, cones, map};
 }
-module.exports={generateMap,addPlayer,removePlayer,handleAction,update,gameState,map,players,bullets,cones,config};
+
+module.exports = {
+  generateMap,
+  addPlayer,
+  removePlayer,
+  handleAction,
+  update,
+  gameState,
+  map,
+  players,
+  bullets,
+  cones
+};
