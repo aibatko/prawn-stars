@@ -37,6 +37,16 @@ function handleJoin(req, res) {
   });
 }
 
+function handleClasses(res) {
+  const list = Object.keys(configs.classes).map(id => ({
+    id,
+    name: configs.classes[id].name,
+    image: configs.classes[id].image
+  }));
+  res.writeHead(200, {'Content-Type': 'application/json'});
+  res.end(JSON.stringify(list));
+}
+
 function handleStream(req, res, id) {
   res.writeHead(200, {
     'Content-Type': 'text/event-stream',
@@ -70,12 +80,16 @@ function serve(req, res) {
     sendFile(res, path.join(__dirname,'..','public','style.css'),'text/css');
   } else if (req.method==='GET' && parsed.pathname.startsWith('/assets/')) {
     const asset = parsed.pathname.replace(/^\/+/, '');
-    sendFile(res, path.join(__dirname, '..', 'public', asset), 'audio/wav');
+    const ext = path.extname(asset).toLowerCase();
+    const type = ext === '.png' ? 'image/png' : 'audio/wav';
+    sendFile(res, path.join(__dirname, '..', 'public', asset), type);
   } else if (req.method==='POST' && parsed.pathname==='/join') {
     handleJoin(req, res);
   } else if (req.method==='GET' && parsed.pathname==='/stream') {
     const id=parsed.query.id;
     handleStream(req, res, id);
+  } else if (req.method==='GET' && parsed.pathname==='/classes') {
+    handleClasses(res);
   } else if (req.method==='POST' && parsed.pathname==='/action') {
     handleAction(req, res);
   } else {

@@ -46,6 +46,15 @@ const sndDie = document.getElementById('sndDie');
 const sndGrapple = document.getElementById('sndGrapple');
 const sndAbility = document.getElementById('sndAbility');
 [sndShoot, sndKill, sndDie, sndGrapple, sndAbility].forEach(s => { s.volume = 1; });
+const images = {};
+function getImage(name){
+  if(!images[name]){
+    const img=new Image();
+    img.src='assets/'+name;
+    images[name]=img;
+  }
+  return images[name];
+}
 
 function playSound(el, reset=false){
   if(reset){
@@ -92,15 +101,20 @@ function draw() {
     const prev=smoothPrev[id]||p;
     const px=(prev.x + (p.x-prev.x)*t - camX)*tileSize;
     const py=(prev.y + (p.y-prev.y)*t - camY)*tileSize;
-    ctx.fillStyle=id===playerId?'#0f0':'#f00';
-    ctx.beginPath();
-    ctx.arc(px, py, tileSize/2-2,0,Math.PI*2);
-    ctx.fill();
+    const size = tileSize + 4;
+    const img = getImage(p.stats.image);
+    if(img.complete) ctx.drawImage(img, px-size/2, py-size/2, size, size);
+    else {
+      ctx.fillStyle=id===playerId?'#0f0':'#f00';
+      ctx.beginPath();
+      ctx.arc(px, py, size/2-2,0,Math.PI*2);
+      ctx.fill();
+    }
     // health bar
     ctx.fillStyle='#000';
-    ctx.fillRect(px - tileSize/2, py - tileSize/2 - 4, tileSize, 3);
+    ctx.fillRect(px - size/2, py - size/2 - 4, size, 3);
     ctx.fillStyle='#0f0';
-    ctx.fillRect(px - tileSize/2, py - tileSize/2 - 4, tileSize*(p.hp/config.playerHp), 3);
+    ctx.fillRect(px - size/2, py - size/2 - 4, size*(p.hp/config.playerHp), 3);
   }
   ctx.fillStyle='#ff0';
   bullets.forEach(b=>{
@@ -258,10 +272,10 @@ function drawLeaderboard(){
   }
 }
 
-function start(){
-  const name = prompt('Enter your name');
-  const cls = prompt('Choose your class (class1, class2, class3)') || 'class1';
+function start(cls){
+  const name = document.getElementById('nameInput').value || 'Player';
   fetch('/join',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name, class: cls})}).then(r=>r.json()).then(data=>{
+    document.getElementById('menu').style.display='none';
     playerId=data.id; map=data.map; config=data.config||config;
     lastHp = config.playerHp;
     const es=new EventSource('/stream?id='+playerId);
@@ -308,4 +322,15 @@ function start(){
     setupInput();
   });
 }
-start();
+function initMenu(){
+  fetch('/classes').then(r=>r.json()).then(list=>{
+    const cont=document.getElementById('classButtons');
+    list.forEach(c=>{
+      const btn=document.createElement('button');
+      btn.textContent=c.name;
+      btn.addEventListener('click',()=>start(c.id));
+      cont.appendChild(btn);
+    });
+  });
+}
+initMenu();

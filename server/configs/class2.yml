@@ -1,5 +1,5 @@
 name: Tank
-image: tank.png
+image: primo.png
 playerSpeed: 0.8
 bulletSpeed: 2.5
 reloadTime: 0.3
