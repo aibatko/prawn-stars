@@ -43,7 +43,7 @@ let config = {
 const sndShoot = new Audio('assets/gunshot.wav');
 const sndKill = new Audio('assets/laser_pew.wav');
 const sndDie = new Audio('assets/player_death_scream.wav');
-const sndGrapple = new Audio('assets/grapple.wav');
+const sndGrapple = new Audio('assets/grappling_hook_zzzzup.wav');
 [sndShoot, sndKill, sndDie, sndGrapple].forEach(s => { s.volume = 1; });
 sndGrapple.loop = true;
 
