@@ -19,6 +19,7 @@ let bullets = [];
 let cones = [];
 let flames = [];
 let aoes = [];
+let warnings = [];
 let lastHp = 10;
 const keys = {};
 const prevPlayers = {};
@@ -141,6 +142,13 @@ function draw() {
     ctx.closePath();
     ctx.fill();
   });
+  ctx.strokeStyle='red';
+  ctx.lineWidth=2;
+  warnings.forEach(w=>{
+    ctx.beginPath();
+    ctx.arc((w.x - camX)*tileSize,(w.y - camY)*tileSize,w.radius*tileSize,0,Math.PI*2);
+    ctx.stroke();
+  });
   ctx.fillStyle='rgba(255,100,0,0.4)';
   aoes.forEach(a=>{
     ctx.beginPath();
@@ -177,6 +185,10 @@ function draw() {
     else drawGrapplePreview({x:mx,y:my}, camX, camY);
   }
   drawLeaderboard();
+  if(me && me.frozen && me.frozen>0){
+    ctx.fillStyle='rgba(0,180,255,0.3)';
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+  }
 /// help
   if(me){
     const cd = config.grappleCooldown*1000 - (Date.now() - me.lastGrapple);
@@ -207,6 +219,8 @@ function setupInput(){
   document.addEventListener('keyup',e=>{keys[e.key]=false;});
   setInterval(()=>{
     if(!playerId) return;
+    const me = players[playerId];
+    if(me && me.frozen && me.frozen>0) return;
     let dx=0,dy=0;
     if(keys['w'])dy-=1;
     if(keys['s'])dy+=1;
@@ -324,6 +338,7 @@ function start(cls){
       cones=state.cones||[];
       flames=state.flames||[];
       aoes=state.aoes||[];
+      warnings=state.warnings||[];
       lastUpdate=Date.now();
       for(const id in state.players){
         const p=state.players[id];
