@@ -147,13 +147,14 @@ function draw() {
     ctx.arc((a.x - camX)*tileSize,(a.y - camY)*tileSize,a.radius*tileSize,0,Math.PI*2);
     ctx.fill();
   });
-  // grapple lines
+  // grapple lines (skip for jump-type movement)
   ctx.strokeStyle = '#0ff';
   ctx.lineWidth = 2;
   grappleAnims.forEach(g=>{
     const p = players[g.id];
     if(!p){ g.done=true; return; }
     if(!p.grapple){ g.done=true; return; }
+    if(p.grapple.type === 'jump' || p.stats.jump){ g.done=true; return; }
     ctx.beginPath();
     ctx.moveTo((p.x - camX)*tileSize,(p.y - camY)*tileSize);
     ctx.lineTo((p.grapple.x - camX)*tileSize,(p.grapple.y - camY)*tileSize);
@@ -172,7 +173,8 @@ function draw() {
   animations = animations.filter(a=>a.t<10);
 
   if(me && (keys['ArrowUp']||keys['ArrowDown']||keys['ArrowLeft']||keys['ArrowRight'])){
-    drawGrapplePreview({x:mx,y:my}, camX, camY);
+    if(config.jump) drawJumpPreview({x:mx,y:my}, camX, camY);
+    else drawGrapplePreview({x:mx,y:my}, camX, camY);
   }
   drawLeaderboard();
 /// help
@@ -266,6 +268,23 @@ function drawGrapplePreview(me, camX, camY){
   }
 }
 
+function drawJumpPreview(me, camX, camY){
+  ctx.fillStyle='rgba(255,255,255,0.3)';
+  const dirs=[
+    {x:0,y:-1},{x:0,y:1},{x:-1,y:0},{x:1,y:0},
+    {x:-1,y:-1},{x:1,y:-1},{x:-1,y:1},{x:1,y:1}
+  ];
+  for(const d of dirs){
+    let cx=Math.floor(me.x), cy=Math.floor(me.y);
+    for(let i=0;i<(config.grappleRange||5);i++){
+      cx+=d.x; cy+=d.y;
+      if(cx<0||cy<0||cx>=map[0].length||cy>=map.length){ cx-=d.x; cy-=d.y; break; }
+      if(map[cy][cx]===1){ cx-=d.x; cy-=d.y; break; }
+    }
+    ctx.fillRect((cx - camX)*tileSize+4, (cy - camY)*tileSize+4, tileSize-8, tileSize-8);
+  }
+}
+
 function drawLeaderboard(){
   const arr = Object.values(players).sort((a,b)=> (b.score||0) - (a.score||0));
   board.height = 20 + arr.length*14;
@@ -325,7 +344,9 @@ function start(cls){
         if(me.hp<lastHp) playSound(sndDie,true);
         else if(me.hp>lastHp) playSound(sndKill,true);
         if(me.grapple){
-          if(sndGrapple.paused) playSound(sndGrapple);
+          if(!(config.jump && me.grapple.type==='jump')){
+            if(sndGrapple.paused) playSound(sndGrapple);
+          }
         } else {
           if(!sndGrapple.paused){
             sndGrapple.pause();
