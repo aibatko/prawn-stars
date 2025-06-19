@@ -40,9 +40,12 @@ let config = {
   abilityDamage: 6,
   abilityRange: 4
 };
-const sndShoot = new Audio('assets/shoot.wav');
-const sndKill = new Audio('assets/kill.wav');
-const sndDie = new Audio('assets/die.wav');
+const sndShoot = new Audio('assets/gunshot.wav');
+const sndKill = new Audio('assets/laser_pew.wav');
+const sndDie = new Audio('assets/player_death_scream.wav');
+const sndGrapple = new Audio('assets/grapple.wav');
+[sndShoot, sndKill, sndDie, sndGrapple].forEach(s => { s.volume = 1; });
+sndGrapple.loop = true;
 
 function draw() {
   ctx.clearRect(0,0,canvas.width,canvas.height);
@@ -203,6 +206,8 @@ function setupInput(){
       if(gdx<0) dir+='left';
       else if(gdx>0) dir+='right';
       send({type:'grapple',dir});
+      sndGrapple.currentTime = 0;
+      sndGrapple.play();
     }
 
     if(keys['Enter'])send({type:'ability'});
@@ -277,6 +282,14 @@ function start(){
       if(me){
         if(me.hp<lastHp) sndDie.play();
         else if(me.hp>lastHp) sndKill.play();
+        if(me.grapple){
+          if(sndGrapple.paused) sndGrapple.play();
+        } else {
+          if(!sndGrapple.paused){
+            sndGrapple.pause();
+            sndGrapple.currentTime = 0;
+          }
+        }
         lastHp=me.hp;
       }
     };
