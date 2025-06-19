@@ -75,8 +75,8 @@ Client logic in `public/client.js` uses these endpoints to join the game, listen
 - Browser zoom keys are disabled so everyone sees the same area
 
 ### Modifying the game
-
 - **Changing map size or player stats** – tweak values in the files under `server/configs/` (loaded by `server/config.js`). Class files include a `name` and `image` property in addition to the stats.
+
 - **Game logic implementation** – handled in `addPlayer`, `update` and `handleAction` inside `server/game.js`.
 - **Client rendering** – update canvas drawing code or add sprites in `public/client.js` and assets under `public/`.
 - **Camera behaviour** – the view follows the current player, computed in `draw()` inside `public/client.js`.
