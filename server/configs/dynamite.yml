@@ -13,9 +13,11 @@ freezeArrow: true
 freezeDuration: 30
 freezeRange: 6
 freezeSpeed: 3
+freezeRadius: 1.5
 abilityCooldown: 5
 rocketCount: 5
 rocketDamage: 3
 rocketRadius: 2
-rocketDelay: 10
-rocketInterval: 5
+rocketDelay: 15
+rocketInterval: 10
+rocketSpread: 1

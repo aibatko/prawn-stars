@@ -178,10 +178,11 @@ function useAbility(ownerId) {
   if (owner.stats.rocketCount) {
     const delay = owner.stats.rocketDelay || 10; // ticks
     const interval = owner.stats.rocketInterval || 5;
+    const spread = owner.stats.rocketSpread || 1;
     for (let i = 0; i < owner.stats.rocketCount; i++) {
       aoes.push({
-        x: target.x,
-        y: target.y,
+        x: target.x + (Math.random()*2-1) * spread,
+        y: target.y + (Math.random()*2-1) * spread,
         owner: ownerId,
         radius: owner.stats.rocketRadius || 2,
         damage: owner.stats.rocketDamage || owner.stats.abilityDamage || 3,
@@ -243,7 +244,14 @@ function update() {
 
       for (const id in players) {
         const p = players[id];
-        if (Math.floor(p.x) === Math.floor(b.x) && Math.floor(p.y) === Math.floor(b.y)) {
+        let hit=false;
+        if (b.radius){
+          const dx=p.x-b.x; const dy=p.y-b.y;
+          if (Math.sqrt(dx*dx+dy*dy)<=b.radius) hit=true;
+        } else if (Math.floor(p.x) === Math.floor(b.x) && Math.floor(p.y) === Math.floor(b.y)) {
+          hit=true;
+        }
+        if (hit) {
           if (id !== b.owner) {
             if (b.freeze) {
               p.freeze = Math.max(p.freeze || 0, b.freeze);
@@ -383,7 +391,8 @@ function handleAction(id, action) {
         damage: 0,
         freeze: p.stats.freezeDuration || 30,
         life: Math.ceil((p.stats.freezeRange || 6) / speed),
-        size: p.stats.bulletSize || 4,
+        size: (p.stats.bulletSize || 4) * 3,
+        radius: p.stats.freezeRadius || 1.5,
         color: 'cyan'
       });
       p.lastGrapple = now;
