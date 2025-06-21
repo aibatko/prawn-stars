@@ -141,8 +141,8 @@ function draw() {
     ctx.closePath();
     ctx.fill();
   });
-  ctx.fillStyle='rgba(255,100,0,0.4)';
   aoes.forEach(a=>{
+    ctx.fillStyle = a.color || 'rgba(255,100,0,0.4)';
     ctx.beginPath();
     ctx.arc((a.x - camX)*tileSize,(a.y - camY)*tileSize,a.radius*tileSize,0,Math.PI*2);
     ctx.fill();
@@ -177,6 +177,10 @@ function draw() {
     else drawGrapplePreview({x:mx,y:my}, camX, camY);
   }
   drawLeaderboard();
+  if(me && me.freeze && me.freeze>0){
+    ctx.fillStyle='rgba(0,255,255,0.2)';
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+  }
 /// help
   if(me){
     const cd = config.grappleCooldown*1000 - (Date.now() - me.lastGrapple);
