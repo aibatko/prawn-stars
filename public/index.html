@@ -19,6 +19,19 @@
 <audio id="sndDie" src="assets/player_death_scream.wav" preload="auto"></audio>
 <audio id="sndGrapple" src="assets/grappling_hook_zzzzup.wav" preload="auto" loop></audio>
 <audio id="sndAbility" src="assets/shotgun_fire.wav" preload="auto"></audio>
+<script>
+  (function(){
+    function preventZoom(e){
+      if(e.ctrlKey && ['+','-','_','=','0','NumpadAdd','NumpadSubtract','Numpad0'].includes(e.key)) {
+        e.preventDefault();
+      }
+    }
+    window.addEventListener('keydown', preventZoom);
+    window.addEventListener('wheel', e => {
+      if (e.ctrlKey) e.preventDefault();
+    }, { passive: false });
+  })();
+</script>
 <script src="client.js"></script>
 </body>
 </html>
