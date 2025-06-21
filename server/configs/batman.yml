@@ -1,6 +1,6 @@
 name: Batman
 image: batman.png
-playerSpeed: 0.8
+playerSpeed: 0.4
 bulletSpeed: 2.5
 reloadTime: 0.3
 grappleSpeed: 2

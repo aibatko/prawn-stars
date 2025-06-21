@@ -1,6 +1,6 @@
 name: Primo
 image: primo.png
-playerSpeed: 1.0
+playerSpeed: 0.25
 bulletSpeed: 2
 reloadTime: 0.4
 grappleSpeed: 2

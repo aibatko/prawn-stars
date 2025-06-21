@@ -1,6 +1,6 @@
 name: Dynamike
 image: dynamite.png
-playerSpeed: 1.2
+playerSpeed: 0.6
 bulletSpeed: 2.5
 reloadTime: 0.1
 bulletDamage: 1
