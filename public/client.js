@@ -2,13 +2,22 @@ const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 const board = document.getElementById('leaderboard');
 const bctx = board.getContext('2d');
-const tileSize = 16;
+let tileSize = 16;
+function updateTileSize(){
+  if(map.length && map[0].length){
+    tileSize = Math.min(
+      canvas.width / map[0].length,
+      canvas.height / map.length
+    );
+  }
+}
 const CONE_ANGLE = Math.PI / 3;
 function resize(){
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
   board.width = 160;
   board.height = 100;
+  updateTileSize();
 }
 window.addEventListener('resize', resize);
 resize();
@@ -83,10 +92,14 @@ function draw() {
     my = prev.y + (me.y - prev.y)*t;
     camX = mx - tilesX/2;
     camY = my - tilesY/2;
+  }
+  if(map.length){
     const maxX = map[0].length - tilesX;
     const maxY = map.length - tilesY;
-    camX = Math.max(0, Math.min(camX, maxX));
-    camY = Math.max(0, Math.min(camY, maxY));
+    if(maxX < 0) camX = maxX/2;
+    else camX = Math.max(0, Math.min(camX, maxX));
+    if(maxY < 0) camY = maxY/2;
+    else camY = Math.max(0, Math.min(camY, maxY));
   }
 
   const startX = Math.floor(camX);
@@ -313,6 +326,7 @@ function start(cls){
   fetch('/join',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name, class: cls})}).then(r=>r.json()).then(data=>{
     document.getElementById('menu').style.display='none';
     playerId=data.id; map=data.map; config=data.config||config;
+    updateTileSize();
     lastHp = config.playerHp;
     const es=new EventSource('/stream?id='+playerId);
 
