@@ -1,8 +1,8 @@
 name: Primo
 image: primo.png
-playerSpeed: 0.25
-bulletSpeed: 2
-reloadTime: 0.4
+playerSpeed: 0.5
+bulletSpeed: 3
+reloadTime: 0.3
 grappleSpeed: 2
 grappleRange: 10
 bulletDamage: 2
@@ -11,8 +11,8 @@ regenOnKill: 10
 grappleCooldown: 3
 abilityCooldown: 5
 abilityDamage: 1
-abilityRange: 5
-bulletRange: 4
+abilityRange: 8
+bulletRange: 7
 bulletSize: 8
 bulletColor: orange
 jump: true
@@ -24,4 +24,4 @@ flameDuration: 3
 flameInterval: 10
 flameColor: rgba(255,128,0,0.4)
 flameAngle: 1
-flameRange: 6
+flameRange: 8
